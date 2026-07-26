@@ -131,7 +131,7 @@ class CaisseMixin:
         if not texte:
             return
 
-        resultats = db.get_produits(search=texte, inclure_inactifs=False)[:8]
+        resultats = db.get_produits(search=texte, inclure_inactifs=False)[:20]
 
         for p in resultats:
             cadre = tk.Frame(self._frame_suggestions, bg=COULEURS["card"])
@@ -159,7 +159,7 @@ class CaisseMixin:
                      bg=COULEURS["card"], fg=stock_color).pack(side=tk.RIGHT, padx=4)
 
             # Clic = ajouter
-            for widget in (cadre,) + cadre.winfo_children():
+            for widget in (cadre,) + tuple(cadre.winfo_children()):
                 widget.bind("<Button-1>", lambda e, pid=p["id"]: self._ajouter_produit(pid))
                 widget.configure(cursor="hand2")
 
