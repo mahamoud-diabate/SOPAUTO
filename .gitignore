@@ -1,0 +1,40 @@
+# Base de données (contient des vraies données, jamais dans git)
+*.db
+*.db-wal
+*.db-shm
+*.db.backup-*
+
+# Build et distribution
+dist/
+build_temp/
+build/
+*.spec
+
+# Environnement Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Fichiers temporaires
+_splice*.py
+_refactor.py
+_add_*.py
+_clean_db.py
+_fix_*.py
+_cap.py
+*.log
+
+# Captures d'écran
+_capture_*.png
+
+# Dossiers créés par l'appli
+sauvegardes/
+exports/
+factures/
+rapports/
+
+# IDE
+.vscode/
+.idea/
