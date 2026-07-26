@@ -40,7 +40,9 @@ class CaisseMixin:
                                     bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
                                     insertbackground=COULEURS["input_fg"])
         self.e_recherche.pack(fill=tk.X, ipady=8, pady=(2, 0))
-        self.e_recherche.bind("<KeyRelease>", self._recherche_typing)
+        self._var_recherche = tk.StringVar()
+        self.e_recherche.configure(textvariable=self._var_recherche)
+        self._var_recherche.trace_add("write", lambda *_: self._recherche_typing())
         self.e_recherche.bind("<Return>", self._ajouter_premier)
         self.e_recherche.focus_set()
 
@@ -105,7 +107,7 @@ class CaisseMixin:
     # ── Recherche avec suggestions ──
 
     def _recherche_typing(self, event=None):
-        texte = self.e_recherche.get().strip()
+        texte = self._var_recherche.get().strip()
 
         # Vider les suggestions
         for w in self._frame_suggestions.winfo_children():
@@ -153,7 +155,7 @@ class CaisseMixin:
 
     def _ajouter_premier(self, event=None):
         """Enter dans la recherche = ajouter le 1er résultat."""
-        texte = self.e_recherche.get().strip()
+        texte = self._var_recherche.get().strip()
         if not texte:
             return
 
@@ -177,9 +179,8 @@ class CaisseMixin:
 
         if produit:
             self._ajouter_produit(produit["id"])
-            self.e_recherche.delete(0, tk.END)
+            self._var_recherche.set("")
             self.e_recherche.focus_set()
-            self._recherche_typing()
 
     def _ajouter_produit(self, produit_id):
         produit = db.get_produit(produit_id)
