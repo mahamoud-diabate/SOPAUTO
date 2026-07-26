@@ -7,7 +7,7 @@ from datetime import datetime
 
 import database as db
 import factures
-from dialogues import DialoguePaiement
+from dialogues import DialoguePaiement, DialoguePaiementSimple
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
                         TableauTriable, ajouter_scrollbars, fmt_money,
                         infobulle, zebre)
@@ -367,7 +367,7 @@ class CaisseMixin:
             messagebox.showinfo("Panier vide", "Ajoutez au moins un article.", parent=self.root)
             return
         sous_total = sum(l["quantite"] * l["pu"] for l in self.panier)
-        d = DialoguePaiement(self.root, sous_total, [dict(l) for l in self.panier], db.get_clients())
+        d = DialoguePaiementSimple(self.root, sous_total, [dict(l) for l in self.panier], db.get_clients())
         infos = d.attendre()
         if not infos:
             return

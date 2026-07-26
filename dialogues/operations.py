@@ -516,3 +516,237 @@ class DemanderMontant(simpledialog.Dialog):
         self.resultat = (parse_float(self.e_montant.get()), self.cb_mode.get(),
                          self.e_ref.get().strip())
 
+
+# ═══════════════════════════════════════════════════════
+# DialoguePaiementSimple — 1 champ prix, 4 modes, ultra-rapide
+# ═══════════════════════════════════════════════════════
+
+class DialoguePaiementSimple(DialogueBase):
+    """Encaissement simplifié : un seul prix vendu, modes réduits, client optionnel."""
+
+    MODES = ["Espèces", "Wave", "Orange Money", "Crédit"]
+
+    def __init__(self, parent, sous_total, items, clients=None) -> None:
+        super().__init__(parent, "Encaissement", 400, 420)
+        self.items = items
+        self.clients = clients or []
+        self.devise = db.get_devise()
+        self._cout_total = self._calculer_cout(items)
+
+        # Le prix total catalogue
+        self._prix_catalogue = sous_total
+
+        f = self.corps
+
+        # ── Résumé panier ──
+        nb_articles = sum(l["quantite"] for l in items)
+        nb_lignes = len(items)
+        tk.Label(f, text=f"{nb_articles} article(s) · {nb_lignes} ligne(s)",
+                 font=(POLICE, 10, "bold"), bg=COULEURS["bg"],
+                 fg=COULEURS["text"]).pack(anchor="w")
+        tk.Label(f, text=f"Total catalogue : {fmt_money(sous_total, self.devise)}",
+                 font=(POLICE, 9), bg=COULEURS["bg"],
+                 fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(0, 12))
+
+        # ── Prix vendu (LE champ principal) ──
+        tk.Label(f, text="Prix vendu", font=(POLICE, 12, "bold"),
+                 bg=COULEURS["bg"], fg=COULEURS["primary"]).pack(anchor="w")
+        self.e_prix_vendu = tk.Entry(f, font=(POLICE, 24, "bold"), width=12,
+                                     bd=2, relief=tk.SOLID, justify="center",
+                                     bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
+                                     insertbackground=COULEURS["input_fg"])
+        self.e_prix_vendu.insert(0, str(int(sous_total)))
+        self.e_prix_vendu.pack(pady=(2, 0), ipady=6)
+        self.e_prix_vendu.select_range(0, tk.END)
+        self.e_prix_vendu.focus_set()
+
+        # ── Mode de paiement ──
+        tk.Label(f, text="Mode de paiement", font=(POLICE, 10),
+                 bg=COULEURS["bg"], fg=COULEURS["text"]).pack(anchor="w", pady=(12, 2))
+        self.cb_mode = ttk.Combobox(f, state="readonly", font=(POLICE, 11),
+                                    values=self.MODES, width=16)
+        self.cb_mode.current(0)
+        self.cb_mode.pack(anchor="w")
+        self.cb_mode.bind("<<ComboboxSelected>>", lambda e: self._maj_ui())
+
+        # ── Somme remise ──
+        self._frame_recu = tk.Frame(f, bg=COULEURS["bg"])
+        self._frame_recu.pack(fill=tk.X, pady=(10, 0))
+        tk.Label(self._frame_recu, text="Somme remise", font=(POLICE, 10),
+                 bg=COULEURS["bg"], fg=COULEURS["text"]).pack(anchor="w")
+
+        ligne_recu = tk.Frame(self._frame_recu, bg=COULEURS["bg"])
+        ligne_recu.pack(fill=tk.X)
+        self.e_recu = tk.Entry(ligne_recu, font=(POLICE, 16, "bold"), width=10,
+                               bd=1, relief=tk.SOLID, justify="right",
+                               bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
+                               insertbackground=COULEURS["input_fg"])
+        self.e_recu.pack(side=tk.LEFT, ipady=3)
+        self.e_recu.bind("<KeyRelease>", lambda e: self._maj_rendu())
+
+        for montant in (1000, 2000, 5000):
+            b = Bouton(ligne_recu, f"+{montant//1000}k", "secondary",
+                       lambda m=montant: self._ajouter_recu(m), petit=True)
+            b.pack(side=tk.LEFT, padx=(4, 0))
+        b = Bouton(ligne_recu, "= prix", "info",
+                   lambda: self._recu_exact(), petit=True)
+        b.pack(side=tk.LEFT, padx=(4, 0))
+
+        # ── Rendu ──
+        self.lbl_rendu = tk.Label(f, text="", font=(POLICE, 14, "bold"),
+                                  bg=COULEURS["bg"], fg=COULEURS["success"])
+        self.lbl_rendu.pack(anchor="w", pady=(8, 0))
+
+        # ── Alerte coût ──
+        self.lbl_alerte = tk.Label(f, text="", font=(POLICE, 9),
+                                   bg=COULEURS["bg"], fg=COULEURS["danger"])
+        self.lbl_alerte.pack(anchor="w")
+
+        # ── Client ──
+        tk.Label(f, text="Client", font=(POLICE, 9), bg=COULEURS["bg"],
+                 fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(10, 2))
+        self._etiq_clients = {c["nom"] + (" · " + c["telephone"] if c.get("telephone") else ""): c
+                              for c in self.clients}
+        self.cb_client = ttk.Combobox(f, font=(POLICE, 10),
+                                      values=["Client de passage"] + list(self._etiq_clients),
+                                      width=24, state="normal")
+        self.cb_client.set("Client de passage")
+        self.cb_client.pack(anchor="w")
+
+        # ── Ticket ──
+        self.var_imprimer = tk.BooleanVar(value=False)
+        tk.Checkbutton(f, text="Imprimer le ticket", variable=self.var_imprimer,
+                       bg=COULEURS["bg"], font=(POLICE, 9),
+                       activebackground=COULEURS["bg"]).pack(anchor="w", pady=(6, 0))
+
+        self.boutons("💵 Encaisser")
+        self._maj_rendu()
+
+    def _calculer_cout(self, items):
+        total = 0.0
+        for l in items:
+            p = db.get_produit(l["id"])
+            if p:
+                total += float(p.get("cump") or p.get("prix_achat") or 0) * l["quantite"]
+        return total
+
+    def _prix_vendu(self):
+        try:
+            return float(self.e_prix_vendu.get().replace(" ", "").replace(",", "."))
+        except ValueError:
+            return 0.0
+
+    def _recu(self):
+        try:
+            return float(self.e_recu.get().replace(" ", "").replace(",", "."))
+        except ValueError:
+            return 0.0
+
+    def _ajouter_recu(self, montant):
+        actuel = self._recu()
+        self.e_recu.delete(0, tk.END)
+        self.e_recu.insert(0, str(int(actuel + montant)))
+        self._maj_rendu()
+
+    def _recu_exact(self):
+        self.e_recu.delete(0, tk.END)
+        self.e_recu.insert(0, str(int(max(0, self._prix_vendu()))))
+        self._maj_rendu()
+
+    def _maj_rendu(self):
+        prix = self._prix_vendu()
+        recu = self._recu()
+        mode = self.cb_mode.get()
+        devise = self.devise
+
+        if mode == "Crédit":
+            self.lbl_rendu.configure(text="Vente à crédit", fg=COULEURS["warning"])
+            self.lbl_alerte.configure(text="")
+        elif recu >= prix:
+            rendu = recu - prix
+            self.lbl_rendu.configure(
+                text=f"Rendu : {fmt_money(rendu, devise)}", fg=COULEURS["success"])
+        else:
+            manque = prix - recu
+            self.lbl_rendu.configure(
+                text=f"Manque : {fmt_money(manque, devise)}", fg=COULEURS["danger"])
+
+        # Alerte si sous le coût
+        if prix > 0 and self._cout_total > 0 and prix < self._cout_total:
+            perte = self._cout_total - prix
+            self.lbl_alerte.configure(
+                text=f"⚠️ Sous le coût de revient ({fmt_money(self._cout_total, devise)}) — Perte : {fmt_money(perte, devise)}")
+        else:
+            self.lbl_alerte.configure(text="")
+
+    def _maj_ui(self):
+        mode = self.cb_mode.get()
+        if mode == "Crédit":
+            self._frame_recu.pack_forget()
+            self.e_recu.delete(0, tk.END)
+            self.e_recu.insert(0, "0")
+        else:
+            self._frame_recu.pack(after=self.e_prix_vendu, fill=tk.X, pady=(10, 0))
+        self._maj_rendu()
+
+    def _client_choisi(self):
+        etiquette = self.cb_client.get().strip()
+        return self._etiq_clients.get(etiquette)
+
+    def valider(self):
+        prix_vendu = self._prix_vendu()
+        if prix_vendu <= 0:
+            messagebox.showerror("Erreur", "Le prix vendu doit être supérieur à 0.",
+                                 parent=self.dialog)
+            return
+
+        mode = self.cb_mode.get()
+        recu = self._recu()
+
+        if mode == "Crédit":
+            client = self._client_choisi()
+            if not client:
+                messagebox.showerror("Client requis",
+                                     "Une vente à crédit nécessite un client enregistré.",
+                                     parent=self.dialog)
+                return
+        elif recu < prix_vendu:
+            messagebox.showerror("Paiement insuffisant",
+                                 f"Le client donne {fmt_money(recu, self.devise)} "
+                                 f"pour un total de {fmt_money(prix_vendu, self.devise)}.",
+                                 parent=self.dialog)
+            return
+
+        # Alerte vente à perte
+        if self._cout_total > 0 and prix_vendu < self._cout_total:
+            msg = (f"Le prix vendu ({fmt_money(prix_vendu, self.devise)}) est "
+                   f"inférieur au coût ({fmt_money(self._cout_total, self.devise)}).\n\n"
+                   f"Perte : {fmt_money(self._cout_total - prix_vendu, self.devise)}\n\n"
+                   f"Confirmer quand même ?")
+            if not messagebox.askyesno("Vente à perte", msg, parent=self.dialog):
+                return
+
+        # Répartition proportionnelle du prix sur les lignes
+        items_reels = []
+        cat_total = self._prix_catalogue
+        ratio = prix_vendu / cat_total if cat_total > 0 else 1.0
+
+        for l in self.items:
+            pu_reel = round(l["pu"] * ratio, 0)
+            items_reels.append((l["id"], l["quantite"], pu_reel))
+
+        # Remise à 0 car les prix réels intègrent déjà la réduction
+        remise = 0.0
+
+        client = self._client_choisi()
+        self.result = {
+            "items_reels": items_reels,
+            "client_nom": client["nom"] if client else "Client de passage",
+            "client_id": client["id"] if client else None,
+            "remise": remise,
+            "mode_paiement": mode,
+            "montant_paye": recu if mode != "Crédit" else 0,
+            "imprimer": self.var_imprimer.get(),
+        }
+        self.dialog.destroy()
+
