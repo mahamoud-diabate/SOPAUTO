@@ -1,5 +1,6 @@
 """
-SODIPAC - Caisse
+SODIPAC - Point de vente (registre)
+Recherche + suggestions en temps réel + enregistrement.
 """
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -7,198 +8,229 @@ from datetime import datetime
 
 import database as db
 import factures
-from dialogues import DialoguePaiement, DialoguePaiementSimple
-from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, fmt_money,
-                        infobulle, zebre)
+from dialogues import DialoguePaiementSimple
+from ui_widgets import (COULEURS, POLICE, Bouton, Carte, fmt_money)
 
 
 class CaisseMixin:
-    """Point de vente — scan, panier, encaissement avec prix négocié par ligne.
-
-    Flux : recherche/scan → ajout panier → ajustement qté → encaissement F8
-    → dialogue prix réel par ligne → paiement → ticket.
-    """
+    """Point de vente — registre, pas caisse temps réel."""
 
     def afficher_caisse(self):
         if not self.peut("caisse"):
             return self._refus()
-        self._nouvelle_page("🧾 Caisse — Point de vente", 1)
+        self._nouvelle_page("📝 Enregistrer une vente", 1)
 
-        self.panier = []
-        produits = db.get_produits(inclure_inactifs=False)
+        self.enregistrement = []  # liste de dicts: {id, nom, quantite, pu}
 
-        paned = tk.Frame(self.zone, bg=COULEURS["bg"])
-        paned.pack(fill=tk.BOTH, expand=True)
+        carte = Carte(self.zone, "")
+        carte.pack(fill=tk.BOTH, expand=True)
+        c = carte.corps
+        c.columnconfigure(0, weight=1)
 
-        # ── Gauche : saisie ──
-        gauche = Carte(paned, "🛒 Nouvelle vente")
-        gauche.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 8))
-        g = gauche.corps
+        # ── Barre de recherche ──
+        recherche_frame = tk.Frame(c, bg=COULEURS["card"])
+        recherche_frame.pack(fill=tk.X, pady=(0, 8))
 
-        # ── Champ unique : scan + recherche ──
-        self.recherche_caisse = EntreeRecherche(
-            g, "Scannez un code-barres ou cherchez (réf, nom, marque, catégorie)…", 50,
-            callback=lambda: self._charger_catalogue_caisse(), bg=COULEURS["card"])
-        self.recherche_caisse.pack(fill=tk.X, pady=(0, 4))
-        self.recherche_caisse.var.trace_add("write", lambda *_: self._recherche_caisse_typing())
+        self.e_recherche = tk.Entry(recherche_frame, font=(POLICE, 13),
+                                    bd=1, relief=tk.SOLID,
+                                    bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
+                                    insertbackground=COULEURS["input_fg"])
+        self.e_recherche.pack(fill=tk.X, ipady=8)
+        self._placeholder_recherche("Chercher un produit (réf, nom, marque)…")
+        self.e_recherche.bind("<FocusIn>", self._on_focus_in)
+        self.e_recherche.bind("<FocusOut>", self._on_focus_out)
+        self.e_recherche.bind("<KeyRelease>", self._recherche_typing)
+        self.e_recherche.bind("<Return>", self._ajouter_premier)
+        self.e_recherche.focus_set()
 
-        ligne_qte = tk.Frame(g, bg=COULEURS["card"])
-        ligne_qte.pack(fill=tk.X, pady=(0, 8))
-        tk.Label(ligne_qte, text="Qté", font=(POLICE, 9),
-                 bg=COULEURS["card"]).pack(side=tk.LEFT, padx=(0, 4))
+        # ── Suggestions ──
+        self._frame_suggestions = tk.Frame(c, bg=COULEURS["card"])
+        self._frame_suggestions.pack(fill=tk.X)
+
+        # ── Ligne qté ──
+        ligne_qte = tk.Frame(c, bg=COULEURS["card"])
+        ligne_qte.pack(fill=tk.X, pady=(8, 0))
+        tk.Label(ligne_qte, text="Quantité", font=(POLICE, 9),
+                 bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT)
         self.var_qte = tk.StringVar(value="1")
         tk.Spinbox(ligne_qte, from_=1, to=9999, textvariable=self.var_qte,
-                   font=(POLICE, 12), width=5, justify="center").pack(side=tk.LEFT, ipady=3)
-        Bouton(ligne_qte, "➕ Ajouter au panier", "primary",
-               self._ajouter_panier).pack(side=tk.LEFT, padx=(12, 0))
-        # Enter dans le champ recherche = ajouter
-        self.recherche_caisse.entry.bind("<Return>", lambda e: self._ajouter_panier())
-        self.lbl_compteur_cat = tk.Label(ligne_qte, text="", font=(POLICE, 9),
-                                         bg=COULEURS["card"], fg=COULEURS["text_secondary"])
-        self.lbl_compteur_cat.pack(side=tk.RIGHT, padx=4)
+                   font=(POLICE, 11), width=4, justify="center").pack(side=tk.LEFT, padx=6)
 
-        cadre_cat = tk.Frame(g, bg=COULEURS["card"])
-        cadre_cat.pack(fill=tk.BOTH, expand=True)
-        self.tab_catalogue = TableauTriable(cadre_cat, [
-            ("ref", "Référence", 100, "w", False),
-            ("nom", "Produit", 230, "w", False),
-            ("marque", "Marque", 90, "w", False),
-            ("stock", "Rayon", 60, "center", True),
-            ("pv", "Prix", 90, "e", True)], height=11)
-        ajouter_scrollbars(cadre_cat, self.tab_catalogue)
-        self.tab_catalogue.bind("<Double-1>", lambda e: self._ajouter_depuis_catalogue())
-        infobulle(self.tab_catalogue, "Double-clic pour ajouter au panier")
-        self._produits_caisse = produits
-        self._charger_catalogue_caisse()
+        # ── Enregistrement ──
+        tk.Label(c, text="Enregistrement", font=(POLICE, 10, "bold"),
+                 bg=COULEURS["card"], fg=COULEURS["text"]).pack(anchor="w", pady=(16, 4))
 
-        # Focus sur la recherche
-        self.recherche_caisse.entry.focus_set()
+        self._frame_enreg = tk.Frame(c, bg=COULEURS["card"],
+                                     highlightbackground=COULEURS["border"],
+                                     highlightthickness=1)
+        self._frame_enreg.pack(fill=tk.BOTH, expand=True)
 
-        # ── Droite : panier ──
-        droite = Carte(paned, "🧺 Panier")
-        droite.pack(side=tk.LEFT, fill=tk.BOTH, padx=(8, 0))
-        droite.configure(width=470)
-        droite.pack_propagate(False)
-        d = droite.corps
+        # Zone scrollable pour les lignes
+        self._canvas_enreg = tk.Canvas(self._frame_enreg, bg=COULEURS["card"],
+                                       highlightthickness=0, height=180)
+        self._scrollbar = tk.Scrollbar(self._frame_enreg, orient="vertical",
+                                       command=self._canvas_enreg.yview)
+        self._lignes_frame = tk.Frame(self._canvas_enreg, bg=COULEURS["card"])
+        self._lignes_frame.bind("<Configure>",
+            lambda e: self._canvas_enreg.configure(scrollregion=self._canvas_enreg.bbox("all")))
+        self._canvas_enreg.create_window((0, 0), window=self._lignes_frame, anchor="nw")
+        self._canvas_enreg.configure(yscrollcommand=self._scrollbar.set)
+        self._canvas_enreg.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Scrollbar visible seulement si nécessaire
+        self._lignes_frame.bind("<Configure>", self._maj_scrollbar, add="+")
 
-        cadre_panier = tk.Frame(d, bg=COULEURS["card"])
-        cadre_panier.pack(fill=tk.BOTH, expand=True)
-        self.tab_panier = ttk.Treeview(cadre_panier, show="headings", height=12,
-                                       columns=("nom", "qte", "pu", "total"))
-        for col, titre, largeur, ancre in (("nom", "Article", 190, "w"), ("qte", "Qté", 45, "center"),
-                                           ("pu", "P.U.", 80, "e"), ("total", "Total", 90, "e")):
-            self.tab_panier.heading(col, text=titre)
-            self.tab_panier.column(col, width=largeur, anchor=ancre)
-        ajouter_scrollbars(cadre_panier, self.tab_panier)
-        self.tab_panier.bind("<Delete>", lambda e: self._retirer_panier())
-        self.tab_panier.bind("<Double-1>", lambda e: self._modifier_qte_panier())
+        # ── Total + bouton ──
+        pied = tk.Frame(c, bg=COULEURS["card"])
+        pied.pack(fill=tk.X, pady=(8, 0))
 
-        actions = tk.Frame(d, bg=COULEURS["card"])
-        actions.pack(fill=tk.X, pady=6)
-        b1 = Bouton(actions, "➖", "warning", lambda: self._qte_rapide(-1), petit=True)
-        b1.pack(side=tk.LEFT, padx=2); infobulle(b1, "Réduire la quantité de 1")
-        b2 = Bouton(actions, "➕", "success", lambda: self._qte_rapide(1), petit=True)
-        b2.pack(side=tk.LEFT, padx=2); infobulle(b2, "Augmenter la quantité de 1")
-        b3 = Bouton(actions, "✎ Quantité", "info", self._modifier_qte_panier, petit=True)
-        b3.pack(side=tk.LEFT, padx=2); infobulle(b3, "Saisir une quantité précise")
-        b4 = Bouton(actions, "🗑 Vider", "secondary", self._vider_panier, petit=True)
-        b4.pack(side=tk.LEFT, padx=2); infobulle(b4, "Vider tout le panier")
+        self.lbl_total = tk.Label(pied, text="Total : " + fmt_money(0, self.devise),
+                                  font=(POLICE, 18, "bold"),
+                                  bg=COULEURS["card"], fg=COULEURS["primary"])
+        self.lbl_total.pack(side=tk.LEFT, pady=6)
 
-        cadre_total = tk.Frame(d, bg=COULEURS["total_bg"], highlightbackground=COULEURS["border"],
-                               highlightthickness=1)
-        cadre_total.pack(fill=tk.X, pady=8)
-        self.lbl_articles = tk.Label(cadre_total, text="0 article", font=(POLICE, 9),
-                                     bg=COULEURS["total_bg"], fg=COULEURS["text_secondary"])
-        self.lbl_articles.pack(anchor="w", padx=12, pady=(8, 0))
-        self.lbl_total_panier = tk.Label(cadre_total, text=fmt_money(0, self.devise),
-                                         font=(POLICE, 26, "bold"), bg=COULEURS["total_bg"],
-                                         fg=COULEURS["primary"])
-        self.lbl_total_panier.pack(anchor="w", padx=12, pady=(0, 10))
+        btn_enreg = Bouton(pied, "✍️  Enregistrer  (F8)", "success", self._enregistrer, pady=10)
+        btn_enreg.pack(side=tk.RIGHT)
+        self.root.bind("<F8>", lambda e: self._enregistrer())
 
-        btn_enc = Bouton(d, "✅  ENCAISSER  (F8)", "success", self._encaisser,
-               pady=12)
-        btn_enc.pack(fill=tk.X)
-        infobulle(btn_enc, "Raccourci : F8 — Ouvre le dialogue de paiement")
-        self.root.bind("<F8>", lambda e: self._encaisser())
+        # Message vide
+        self._msg_vide = tk.Label(self._lignes_frame,
+                                  text="Aucun article. Cherchez un produit ci-dessus.",
+                                  font=(POLICE, 10), bg=COULEURS["card"],
+                                  fg=COULEURS["text_secondary"])
+        self._msg_vide.pack(pady=30)
 
-        historique = tk.Frame(d, bg=COULEURS["card"])
-        historique.pack(fill=tk.X, pady=(10, 0))
-        tk.Label(historique, text="Dernières ventes", font=(POLICE, 9, "bold"),
-                 bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w")
-        self.tab_hist_caisse = ttk.Treeview(historique, show="headings", height=5,
-                                            columns=("num", "total", "heure"))
-        for col, titre, largeur, ancre in (("num", "N°", 130, "w"), ("total", "Total", 100, "e"),
-                                           ("heure", "Heure", 70, "center")):
-            self.tab_hist_caisse.heading(col, text=titre)
-            self.tab_hist_caisse.column(col, width=largeur, anchor=ancre)
-        self.tab_hist_caisse.pack(fill=tk.X)
-        self.tab_hist_caisse.bind("<Double-1>",
-                                  lambda e: self._imprimer_selection(self.tab_hist_caisse, True))
-        infobulle(self.tab_hist_caisse, "Double-clic : réimprimer le reçu")
-        self._charger_hist_caisse()
-        self._maj_total_panier()
+        self._maj_total()
 
+    # ── Recherche avec suggestions ──
 
-    def _charger_catalogue_caisse(self):
-        recherche = self.recherche_caisse.get()
-        self._produits_caisse = db.get_produits(search=recherche, inclure_inactifs=False)
-        t = self.tab_catalogue
-        t.delete(*t.get_children())
-        for i, p in enumerate(self._produits_caisse):
-            sv = p.get("stock_vente", p["stock"])
-            etat = ("rupture",) if sv <= 0 else (("alerte",) if p["stock"] <= p["stock_mini"] else ())
-            t.insert("", tk.END, iid=p["id"], tags=zebre(i, etat),
-                     values=(p["reference"], p["nom"], p["marque"], sv,
-                             fmt_money(p["prix_vente"])))
-        self.lbl_compteur_cat.configure(text=f"{len(self._produits_caisse)} produit(s)")
+    def _placeholder_recherche(self, texte):
+        self._placeholder_texte = texte
+        self._placeholder_actif = True
+        self.e_recherche.insert(0, texte)
+        self.e_recherche.configure(fg=COULEURS["text_secondary"])
 
+    def _on_focus_in(self, event):
+        if self._placeholder_actif:
+            self.e_recherche.delete(0, tk.END)
+            self.e_recherche.configure(fg=COULEURS["input_fg"])
+            self._placeholder_actif = False
 
-    def _recherche_caisse_typing(self):
-        """Déclenché à chaque frappe dans la barre de recherche unique."""
-        self._charger_catalogue_caisse()
+    def _on_focus_out(self, event):
+        if not self.e_recherche.get().strip():
+            self._placeholder_recherche(self._placeholder_texte)
 
-
-    def _ajouter_depuis_catalogue(self):
-        sel = self.tab_catalogue.selection()
-        if sel:
-            self._ajouter_produit_panier(int(sel[0]), int(self.var_qte.get() or 1))
-
-
-    def _ajouter_panier(self):
-        code = self.recherche_caisse.get().strip()
-        if not code:
-            self._ajouter_depuis_catalogue()
+    def _recherche_typing(self, event=None):
+        if self._placeholder_actif:
             return
-        produit = db.trouver_produit(code)
+        texte = self.e_recherche.get().strip()
+
+        # Vider les suggestions
+        for w in self._frame_suggestions.winfo_children():
+            w.destroy()
+
+        if not texte:
+            return
+
+        resultats = db.get_produits(search=texte, inclure_inactifs=False)[:8]
+
+        for p in resultats:
+            cadre = tk.Frame(self._frame_suggestions, bg=COULEURS["card"])
+            cadre.pack(fill=tk.X, pady=1)
+            cadre._pid = p["id"]
+
+            nom_marque = p["nom"]
+            if p.get("marque"):
+                nom_marque += f" — {p['marque']}"
+            tk.Label(cadre, text=nom_marque, font=(POLICE, 10, "bold"),
+                     bg=COULEURS["card"], fg=COULEURS["text"],
+                     anchor="w").pack(side=tk.LEFT, padx=8, pady=4)
+
+            sv = p.get("stock_vente", p["stock"])
+            stock_label = f"{sv} en rayon"
+            stock_color = COULEURS["success"] if sv > p.get("stock_mini", 0) else COULEURS["warning"]
+            if sv <= 0:
+                stock_color = COULEURS["danger"]
+
+            tk.Label(cadre, text=fmt_money(p["prix_vente"], self.devise),
+                     font=(POLICE, 10, "bold"), bg=COULEURS["card"],
+                     fg=COULEURS["primary"]).pack(side=tk.RIGHT, padx=8)
+
+            tk.Label(cadre, text=stock_label, font=(POLICE, 8),
+                     bg=COULEURS["card"], fg=stock_color).pack(side=tk.RIGHT, padx=4)
+
+            # Clic = ajouter
+            for widget in (cadre,) + cadre.winfo_children():
+                widget.bind("<Button-1>", lambda e, pid=p["id"]: self._ajouter_produit(pid))
+                widget.configure(cursor="hand2")
+
+        if not resultats:
+            tk.Label(self._frame_suggestions, text="Aucun résultat",
+                     font=(POLICE, 10), bg=COULEURS["card"],
+                     fg=COULEURS["text_secondary"]).pack(pady=8)
+
+    def _ajouter_premier(self, event=None):
+        """Enter dans la recherche = ajouter le 1er résultat."""
+        if self._placeholder_actif:
+            return
+        texte = self.e_recherche.get().strip()
+        if not texte:
+            return
+
+        # Chercher d'abord par scan (réf exacte ou code-barres)
+        produit = db.trouver_produit(texte)
         if not produit:
-            resultats = db.get_produits(search=code, inclure_inactifs=False)
+            resultats = db.get_produits(search=texte, inclure_inactifs=False)
             if len(resultats) == 1:
                 produit = resultats[0]
             elif len(resultats) > 1:
-                self.recherche_caisse.var.set(code)
-                self.recherche_caisse._placeholder_actif = False
-                self._charger_catalogue_caisse()
-                self.statut(f"{len(resultats)} resultats — choisissez dans la liste",
-                            COULEURS["warning"])
-                return
+                produit = resultats[0]  # 1er résultat
             else:
                 # Produit introuvable → proposer ajout rapide
                 if messagebox.askyesno(
                         "Produit introuvable",
-                        f"« {code} » n'est pas dans le catalogue.\n\n"
-                        "Voulez-vous l'ajouter maintenant et le mettre dans le panier ?",
+                        f"« {texte} » n'est pas dans le catalogue.\n\n"
+                        "L'ajouter maintenant ?",
                         parent=self.root):
-                    self._ajout_rapide(code)
+                    self._ajout_rapide(texte)
                 return
-        self._ajouter_produit_panier(produit["id"], int(self.var_qte.get() or 1))
-        self.recherche_caisse.effacer()
-        self.recherche_caisse.entry.focus_set()
 
+        if produit:
+            self._ajouter_produit(produit["id"])
+            self.e_recherche.delete(0, tk.END)
+            self.e_recherche.focus_set()
+            self._recherche_typing()
+
+    def _ajouter_produit(self, produit_id):
+        produit = db.get_produit(produit_id)
+        if not produit:
+            return
+        stock_vente = produit.get("stock_vente", produit["stock"])
+        qte = int(self.var_qte.get() or 1)
+
+        if produit["prix_vente"] <= 0:
+            messagebox.showwarning("Prix manquant",
+                                   f"« {produit['nom']} » n'a pas de prix de vente.",
+                                   parent=self.root)
+            return
+
+        # Cumuler avec la ligne existante si même produit
+        for ligne in self.enregistrement:
+            if ligne["id"] == produit_id:
+                ligne["quantite"] += qte
+                self._rafraichir_enregistrement()
+                return
+
+        self.enregistrement.append({
+            "id": produit_id,
+            "nom": produit["nom"],
+            "quantite": qte,
+            "pu": produit["prix_vente"]
+        })
+        self.var_qte.set("1")
+        self._rafraichir_enregistrement()
 
     def _ajout_rapide(self, nom_suggere=""):
-        """Creer un produit a la volee (nom + prix) et l'ajouter au panier."""
-        from tkinter import simpledialog
+        """Creer un produit a la volee et l'ajouter."""
         nom = simpledialog.askstring(
             "Ajout rapide", "Nom du produit :",
             initialvalue=nom_suggere or "", parent=self.root)
@@ -215,13 +247,10 @@ class CaisseMixin:
             messagebox.showerror("Erreur", "Prix invalide.", parent=self.root)
             return
         if prix <= 0:
-            messagebox.showerror("Erreur", "Le prix doit etre superieur a 0.", parent=self.root)
+            messagebox.showerror("Erreur", "Le prix doit être > 0.", parent=self.root)
             return
 
-        qte = int(self.var_qte.get() or 1)
         ref = f"PRD-TMP-{int(datetime.now().timestamp())}"
-
-        # Chercher une categorie "Non classe" ou la premiere disponible
         cats = db.get_categories()
         cat_id = next((c["id"] for c in cats if c["nom"].lower().startswith("non")), None)
         if not cat_id and cats:
@@ -229,8 +258,8 @@ class CaisseMixin:
 
         ok, msg = db.add_produit(
             ref, nom.strip(), prix_vente=prix, prix_achat=0,
-            stock_vente=qte, stock_reserve=0, categorie_id=cat_id or 1,
-            description="Ajouté depuis la caisse")
+            stock_vente=1, stock_reserve=0, categorie_id=cat_id or 1,
+            description="Ajouté depuis le point de vente")
         if not ok:
             messagebox.showerror("Erreur", msg, parent=self.root)
             return
@@ -238,171 +267,132 @@ class CaisseMixin:
         produit = db.trouver_produit(ref) or db.get_produits(search=nom.strip(), inclure_inactifs=False)
         if produit:
             pid = produit[0]["id"] if isinstance(produit, list) else produit["id"]
-            self._ajouter_produit_panier(pid, qte)
-            self.recherche_caisse.effacer()
-            self.recherche_caisse.entry.focus_set()
-            self._charger_catalogue_caisse()
-            self.statut(f"✅ {nom.strip()} ajoute au catalogue et au panier", COULEURS["success"])
+            self._ajouter_produit(pid)
+            self.statut(f"✅ {nom.strip()} ajouté", COULEURS["success"])
 
+    # ── Enregistrement (ex-panier) ──
 
-    def _ajouter_produit_panier(self, produit_id, quantite):
-        produit = db.get_produit(produit_id)
-        if not produit:
-            return
-        stock_vente = produit.get("stock_vente", produit["stock"])
-        deja = sum(l["quantite"] for l in self.panier if l["id"] == produit_id)
-        if deja + quantite > stock_vente:
-            en_reserve = produit.get("stock_reserve", 0)
-            messagebox.showwarning(
-                "Stock vente insuffisant",
-                f"« {produit['nom']} » : {stock_vente} en rayon"
-                + (f", déjà {deja} dans le panier." if deja else ".")
-                + (f"\n({en_reserve} en réserve — faites un transfert d'abord.)"
-                   if en_reserve else ""), parent=self.root)
-            return
-        if produit["prix_vente"] <= 0:
-            messagebox.showwarning("Prix manquant",
-                                   f"« {produit['nom']} » n'a pas de prix de vente défini.",
-                                   parent=self.root)
-            return
+    def _rafraichir_enregistrement(self):
+        for w in self._lignes_frame.winfo_children():
+            w.destroy()
 
-        for ligne in self.panier:
-            if ligne["id"] == produit_id:
-                ligne["quantite"] += quantite
-                break
+        if not self.enregistrement:
+            self._msg_vide = tk.Label(self._lignes_frame,
+                                      text="Aucun article. Cherchez un produit ci-dessus.",
+                                      font=(POLICE, 10), bg=COULEURS["card"],
+                                      fg=COULEURS["text_secondary"])
+            self._msg_vide.pack(pady=30)
         else:
-            self.panier.append({"id": produit_id, "nom": produit["nom"],
-                                "quantite": quantite, "pu": produit["prix_vente"]})
-        self.var_qte.set("1")
-        self._rafraichir_panier()
-        self.statut(f"+{quantite} × {produit['nom']}", COULEURS["success"])
+            for i, ligne in enumerate(self.enregistrement):
+                bg = COULEURS["row_alt"] if i % 2 == 0 else COULEURS["card"]
+                rang = tk.Frame(self._lignes_frame, bg=bg)
+                rang.pack(fill=tk.X, ipady=4)
 
+                tk.Label(rang, text=ligne["nom"], font=(POLICE, 10, "bold"),
+                         bg=bg, fg=COULEURS["text"], anchor="w").pack(
+                    side=tk.LEFT, padx=12, pady=4)
 
-    def _rafraichir_panier(self):
-        t = self.tab_panier
-        t.delete(*t.get_children())
-        for i, l in enumerate(self.panier):
-            t.insert("", tk.END, iid=str(i),
-                     tags=("pair",) if i % 2 == 0 else ("impair",),
-                     values=(l["nom"], l["quantite"], fmt_money(l["pu"]),
-                             fmt_money(l["quantite"] * l["pu"])))
-        t.tag_configure("impair", background=COULEURS["row_alt"])
-        self._maj_total_panier()
+                # Quantité
+                qte_frame = tk.Frame(rang, bg=bg)
+                qte_frame.pack(side=tk.RIGHT, padx=8)
+                qte_frame.bind("<Double-1>", lambda e, idx=i: self._modifier_qte(idx))
 
+                tk.Label(qte_frame, text=f"×{ligne['quantite']}",
+                         font=(POLICE, 11), bg=bg,
+                         fg=COULEURS["text_secondary"]).pack(side=tk.LEFT, padx=4)
+                tk.Label(qte_frame, text="(double-clic)", font=(POLICE, 7),
+                         bg=bg, fg=COULEURS["text_secondary"]).pack(side=tk.LEFT)
 
-    def _maj_total_panier(self):
-        total = sum(l["quantite"] * l["pu"] for l in self.panier)
-        nb = sum(l["quantite"] for l in self.panier)
-        self.lbl_total_panier.configure(text=fmt_money(total, self.devise))
-        self.lbl_articles.configure(
-            text=f"{nb} article(s) · {len(self.panier)} ligne(s)" if nb else "Panier vide")
+                # Prix
+                total_ligne = ligne["quantite"] * ligne["pu"]
+                tk.Label(rang, text=fmt_money(total_ligne, self.devise),
+                         font=(POLICE, 10, "bold"), bg=bg,
+                         fg=COULEURS["primary"]).pack(side=tk.RIGHT, padx=12)
 
+                # Bouton supprimer
+                btn_x = tk.Label(rang, text="✕", font=(POLICE, 11, "bold"),
+                                 bg=bg, fg=COULEURS["danger"], cursor="hand2")
+                btn_x.pack(side=tk.RIGHT, padx=4)
+                btn_x.bind("<Button-1>", lambda e, idx=i: self._retirer_ligne(idx))
 
-    def _retirer_panier(self):
-        sel = self.tab_panier.selection()
-        if not sel:
+        self._maj_total()
+
+    def _maj_scrollbar(self, event=None):
+        """Affiche la scrollbar uniquement si des articles sont présents ET débordent."""
+        if not self.enregistrement:
+            self._scrollbar.pack_forget()
             return
-        del self.panier[int(sel[0])]
-        self._rafraichir_panier()
+        # after() pour laisser le canvas se stabiliser
+        self.root.after(50, self._verifier_scrollbar)
 
+    def _verifier_scrollbar(self):
+        try:
+            if self._lignes_frame.winfo_reqheight() > self._canvas_enreg.winfo_height():
+                self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            else:
+                self._scrollbar.pack_forget()
+        except tk.TclError:
+            pass
 
-    def _qte_rapide(self, delta):
-        """➕/➖ : ajuste la quantité de la ligne sélectionnée du panier."""
-        sel = self.tab_panier.selection()
-        if not sel:
-            return
-        index = int(sel[0])
-        ligne = self.panier[index]
-        nouvelle = ligne["quantite"] + delta
-        if nouvelle <= 0:
-            del self.panier[index]
-            self._rafraichir_panier()
-            return
-        produit = db.get_produit(ligne["id"])
-        if produit and nouvelle > produit.get("stock_vente", produit["stock"]):
-            messagebox.showwarning(
-                "Stock vente insuffisant",
-                f"Seulement {produit.get('stock_vente', produit['stock'])} en rayon.",
-                parent=self.root)
-            return
-        ligne["quantite"] = nouvelle
-        self._rafraichir_panier()
-        self.tab_panier.selection_set(sel[0])
+    def _maj_total(self):
+        total = sum(l["quantite"] * l["pu"] for l in self.enregistrement)
+        nb = sum(l["quantite"] for l in self.enregistrement)
+        self.lbl_total.configure(
+            text=f"Total : {fmt_money(total, self.devise)}  ·  {nb} article(s)")
 
-
-    def _modifier_qte_panier(self):
-        sel = self.tab_panier.selection()
-        if not sel:
-            return
-        index = int(sel[0])
-        ligne = self.panier[index]
-        from tkinter import simpledialog
+    def _modifier_qte(self, idx):
+        ligne = self.enregistrement[idx]
         nouvelle = simpledialog.askinteger(
             "Quantité", f"Quantité pour « {ligne['nom']} » :",
             initialvalue=ligne["quantite"], minvalue=0, maxvalue=99999, parent=self.root)
         if nouvelle is None:
             return
         if nouvelle == 0:
-            del self.panier[index]
+            del self.enregistrement[idx]
         else:
             produit = db.get_produit(ligne["id"])
             if produit and nouvelle > produit.get("stock_vente", produit["stock"]):
-                messagebox.showwarning(
-                    "Stock vente insuffisant",
-                    f"Seulement {produit.get('stock_vente', produit['stock'])} en rayon.",
-                    parent=self.root)
+                messagebox.showwarning("Stock insuffisant",
+                                       f"Seulement {produit.get('stock_vente', produit['stock'])} en rayon.",
+                                       parent=self.root)
                 return
             ligne["quantite"] = nouvelle
-        self._rafraichir_panier()
+        self._rafraichir_enregistrement()
 
+    def _retirer_ligne(self, idx):
+        del self.enregistrement[idx]
+        self._rafraichir_enregistrement()
 
-    def _vider_panier(self):
-        if self.panier and messagebox.askyesno("Confirmer", "Vider le panier ?", parent=self.root):
-            self.panier.clear()
-            self._rafraichir_panier()
+    # ── Encaissement ──
 
-
-    def _encaisser(self):
-        if not self.panier:
-            messagebox.showinfo("Panier vide", "Ajoutez au moins un article.", parent=self.root)
+    def _enregistrer(self):
+        if not self.enregistrement:
+            messagebox.showinfo("Enregistrement vide",
+                                "Ajoutez au moins un article.", parent=self.root)
             return
-        sous_total = sum(l["quantite"] * l["pu"] for l in self.panier)
-        d = DialoguePaiementSimple(self.root, sous_total, [dict(l) for l in self.panier], db.get_clients())
+
+        sous_total = sum(l["quantite"] * l["pu"] for l in self.enregistrement)
+        items = [dict(l) for l in self.enregistrement]
+
+        d = DialoguePaiementSimple(self.root, sous_total, items, db.get_clients())
         infos = d.attendre()
         if not infos:
             return
-        items = infos["items_reels"]
+
         ok, message, vente_id = db.create_vente(
-            infos["client_nom"], items, remise=infos["remise"],
-            mode_paiement=infos["mode_paiement"], montant_paye=infos["montant_paye"],
+            infos["client_nom"], infos["items_reels"],
+            remise=infos["remise"],
+            mode_paiement=infos["mode_paiement"],
+            montant_paye=infos["montant_paye"],
             client_id=infos["client_id"])
         if not ok:
-            messagebox.showerror("Vente refusee", message, parent=self.root)
+            messagebox.showerror("Vente refusée", message, parent=self.root)
             return
-        self.panier.clear()
-        self._rafraichir_panier()
-        self._charger_catalogue_caisse()
-        self._charger_hist_caisse()
+
+        self.enregistrement.clear()
+        self._rafraichir_enregistrement()
+        self._recherche_typing()
         self._maj_badge_alertes()
-        statut = "Vente " + message + " enregistree"
-        self.statut(statut, COULEURS["success"])
-        if infos["imprimer"]:
-            factures.imprimer_facture(vente_id, format_ticket=True)
-        else:
-            messagebox.showinfo("Vente enregistree", "Facture " + message, parent=self.root)
-        self.recherche_caisse.entry.focus_set()
-        # Synchronisation cloud après chaque vente
+        self.statut(f"✅ Vente {message} enregistrée", COULEURS["success"])
+        self.e_recherche.focus_set()
         self._sync_cloud()
-
-
-    def _charger_hist_caisse(self):
-        t = self.tab_hist_caisse
-        t.delete(*t.get_children())
-        for v in db.get_ventes(limit=10, inclure_annulees=False):
-            t.insert("", tk.END, iid=v["id"],
-                     values=(v["numero"] or ("#" + str(v["id"])), fmt_money(v["total"]),
-                             str(v["date_vente"])[11:16]))
-
-    # =========== PRODUITS ======================================
-
-
