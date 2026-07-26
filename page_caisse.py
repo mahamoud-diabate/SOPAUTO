@@ -31,14 +31,15 @@ class CaisseMixin:
         recherche_frame = tk.Frame(c, bg=COULEURS["card"])
         recherche_frame.pack(fill=tk.X, pady=(0, 8))
 
+        tk.Label(recherche_frame, text="Chercher un produit (réf, nom, marque)…",
+                 font=(POLICE, 9), bg=COULEURS["card"],
+                 fg=COULEURS["text_secondary"]).pack(anchor="w")
+
         self.e_recherche = tk.Entry(recherche_frame, font=(POLICE, 13),
                                     bd=1, relief=tk.SOLID,
                                     bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
                                     insertbackground=COULEURS["input_fg"])
-        self.e_recherche.pack(fill=tk.X, ipady=8)
-        self._placeholder_recherche("Chercher un produit (réf, nom, marque)…")
-        self.e_recherche.bind("<FocusIn>", self._on_focus_in)
-        self.e_recherche.bind("<FocusOut>", self._on_focus_out)
+        self.e_recherche.pack(fill=tk.X, ipady=8, pady=(2, 0))
         self.e_recherche.bind("<KeyRelease>", self._recherche_typing)
         self.e_recherche.bind("<Return>", self._ajouter_premier)
         self.e_recherche.focus_set()
@@ -103,25 +104,7 @@ class CaisseMixin:
 
     # ── Recherche avec suggestions ──
 
-    def _placeholder_recherche(self, texte):
-        self._placeholder_texte = texte
-        self._placeholder_actif = True
-        self.e_recherche.insert(0, texte)
-        self.e_recherche.configure(fg=COULEURS["text_secondary"])
-
-    def _on_focus_in(self, event):
-        if self._placeholder_actif:
-            self.e_recherche.delete(0, tk.END)
-            self.e_recherche.configure(fg=COULEURS["input_fg"])
-            self._placeholder_actif = False
-
-    def _on_focus_out(self, event):
-        if not self.e_recherche.get().strip():
-            self._placeholder_recherche(self._placeholder_texte)
-
     def _recherche_typing(self, event=None):
-        if self._placeholder_actif:
-            return
         texte = self.e_recherche.get().strip()
 
         # Vider les suggestions
@@ -170,8 +153,6 @@ class CaisseMixin:
 
     def _ajouter_premier(self, event=None):
         """Enter dans la recherche = ajouter le 1er résultat."""
-        if self._placeholder_actif:
-            return
         texte = self.e_recherche.get().strip()
         if not texte:
             return
