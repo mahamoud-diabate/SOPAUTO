@@ -17,7 +17,7 @@ from ui_widgets import (COULEURS, POLICE, Bouton, AutocompleteCombobox,
 from .core import DialogueBase, DialogueConnexion
 from .formulaires import (DialogueProduit, DialogueCategorie, DialogueFournisseur,
                           DialogueClient, DialogueUtilisateur)
-from .operations import DialogueMouvement, DialoguePaiement, DemanderMontant
+from .operations import DialogueMouvement, DialoguePaiement, DialoguePaiementSimple, DemanderMontant
 from .v3 import (_Base, DialogueDepot, DialogueTransfert, DialogueCommande,
                  DialogueReception, DialogueOuvrirInventaire, DialogueComptage,
                  DialogueRetour, DialogueCompatibilite, DialogueModele)
