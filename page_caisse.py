@@ -1,6 +1,6 @@
 """
 SODIPAC - Point de vente (registre)
-Recherche + suggestions en temps réel + enregistrement.
+Recherche + Listbox suggestions + enregistrement.
 """
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -20,71 +20,86 @@ class CaisseMixin:
             return self._refus()
         self._nouvelle_page("📝 Enregistrer une vente", 1)
 
-        self.enregistrement = []  # liste de dicts: {id, nom, quantite, pu}
+        self.enregistrement = []
+        self._produits_visibles = []  # cache pour la Listbox
 
         carte = Carte(self.zone, "")
         carte.pack(fill=tk.BOTH, expand=True)
         c = carte.corps
         c.columnconfigure(0, weight=1)
+        c.rowconfigure(2, weight=1)  # ligne enregistrement expand
 
-        # ── Barre de recherche ──
-        recherche_frame = tk.Frame(c, bg=COULEURS["card"])
-        recherche_frame.pack(fill=tk.X, pady=(0, 8))
-
-        tk.Label(recherche_frame, text="Chercher un produit (réf, nom, marque)…",
+        # ── Recherche (row 0) ──
+        tk.Label(c, text="Chercher un produit (réf, nom, marque)…",
                  font=(POLICE, 9), bg=COULEURS["card"],
-                 fg=COULEURS["text_secondary"]).pack(anchor="w")
+                 fg=COULEURS["text_secondary"]).grid(row=0, column=0, sticky="w")
 
-        self.e_recherche = tk.Entry(recherche_frame, font=(POLICE, 13),
+        self.e_recherche = tk.Entry(c, font=(POLICE, 13),
                                     bd=1, relief=tk.SOLID,
                                     bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
                                     insertbackground=COULEURS["input_fg"])
-        self.e_recherche.pack(fill=tk.X, ipady=8, pady=(2, 0))
+        self.e_recherche.grid(row=0, column=0, sticky="ew", pady=(18, 0), ipady=8)
         self._var_recherche = tk.StringVar()
         self.e_recherche.configure(textvariable=self._var_recherche)
         self._var_recherche.trace_add("write", lambda *_: self._recherche_typing())
         self.e_recherche.bind("<Return>", self._ajouter_premier)
+        self.e_recherche.bind("<Down>", self._focus_listbox)
         self.e_recherche.focus_set()
 
-        # ── Suggestions ──
-        self._frame_suggestions = tk.Frame(c, bg=COULEURS["card"])
-        self._frame_suggestions.pack(fill=tk.X)
+        # ── Suggestions Listbox (row 1) ──
+        self._frame_liste = tk.Frame(c, bg=COULEURS["card"])
+        self._frame_liste.grid(row=1, column=0, sticky="ew", pady=(4, 0))
+        self._frame_liste.grid_remove()  # cachée au départ
 
-        # ── Ligne qté ──
-        ligne_qte = tk.Frame(c, bg=COULEURS["card"])
-        ligne_qte.pack(fill=tk.X, pady=(8, 0))
-        tk.Label(ligne_qte, text="Quantité", font=(POLICE, 9),
+        self._lb_suggestions = tk.Listbox(self._frame_liste,
+                                          font=(POLICE, 10), height=6,
+                                          bg=COULEURS["card"], fg=COULEURS["text"],
+                                          selectbackground=COULEURS["primary_light"],
+                                          selectforeground=COULEURS["text"],
+                                          activestyle="none",
+                                          bd=1, relief=tk.SOLID,
+                                          highlightthickness=0)
+        self._lb_suggestions.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._lb_suggestions.bind("<Double-Button-1>", self._clic_listbox)
+        self._lb_suggestions.bind("<Return>", self._clic_listbox)
+        # Clic simple = ajouter
+        self._lb_suggestions.bind("<<ListboxSelect>>", self._clic_listbox)
+
+        # ── Qté ──
+        qte_frame = tk.Frame(c, bg=COULEURS["card"])
+        qte_frame.grid(row=0, column=1, sticky="e", pady=(18, 0), padx=(12, 0))
+        tk.Label(qte_frame, text="Qté", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT)
         self.var_qte = tk.StringVar(value="1")
-        tk.Spinbox(ligne_qte, from_=1, to=9999, textvariable=self.var_qte,
-                   font=(POLICE, 11), width=4, justify="center").pack(side=tk.LEFT, padx=6)
+        tk.Spinbox(qte_frame, from_=1, to=9999, textvariable=self.var_qte,
+                   font=(POLICE, 11), width=4, justify="center").pack(side=tk.LEFT, padx=4)
 
-        # ── Enregistrement ──
+        # ── Enregistrement (row 2, expand) ──
         tk.Label(c, text="Enregistrement", font=(POLICE, 10, "bold"),
-                 bg=COULEURS["card"], fg=COULEURS["text"]).pack(anchor="w", pady=(16, 4))
+                 bg=COULEURS["card"], fg=COULEURS["text"]).grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=(16, 4))
 
         self._frame_enreg = tk.Frame(c, bg=COULEURS["card"],
                                      highlightbackground=COULEURS["border"],
                                      highlightthickness=1)
-        self._frame_enreg.pack(fill=tk.BOTH, expand=True)
+        self._frame_enreg.grid(row=3, column=0, columnspan=2, sticky="nsew", pady=(0, 8))
 
-        # Zone scrollable pour les lignes
+        # Zone scrollable
         self._canvas_enreg = tk.Canvas(self._frame_enreg, bg=COULEURS["card"],
-                                       highlightthickness=0, height=180)
+                                       highlightthickness=0)
         self._scrollbar = tk.Scrollbar(self._frame_enreg, orient="vertical",
                                        command=self._canvas_enreg.yview)
         self._lignes_frame = tk.Frame(self._canvas_enreg, bg=COULEURS["card"])
         self._lignes_frame.bind("<Configure>",
             lambda e: self._canvas_enreg.configure(scrollregion=self._canvas_enreg.bbox("all")))
-        self._canvas_enreg.create_window((0, 0), window=self._lignes_frame, anchor="nw")
+        self._canvas_enreg.create_window((0, 0), window=self._lignes_frame, anchor="nw",
+                                         width=self._frame_enreg.winfo_reqwidth())
         self._canvas_enreg.configure(yscrollcommand=self._scrollbar.set)
         self._canvas_enreg.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        # Scrollbar visible seulement si nécessaire
-        self._lignes_frame.bind("<Configure>", self._maj_scrollbar, add="+")
 
-        # ── Total + bouton ──
+        # ── Total + bouton (row 4) ──
         pied = tk.Frame(c, bg=COULEURS["card"])
-        pied.pack(fill=tk.X, pady=(8, 0))
+        pied.grid(row=4, column=0, columnspan=2, sticky="ew")
 
         self.lbl_total = tk.Label(pied, text="Total : " + fmt_money(0, self.devise),
                                   font=(POLICE, 18, "bold"),
@@ -104,76 +119,68 @@ class CaisseMixin:
 
         self._maj_total()
 
-    # ── Recherche avec suggestions ──
+    # ── Recherche ──
 
     def _recherche_typing(self, event=None):
         texte = self._var_recherche.get().strip()
 
-        # Vider les suggestions
-        for w in self._frame_suggestions.winfo_children():
-            w.destroy()
-
         if not texte:
+            self._frame_liste.grid_remove()
             return
 
         resultats = db.get_produits(search=texte, inclure_inactifs=False)[:20]
+        self._produits_visibles = resultats
 
-        for p in resultats:
-            cadre = tk.Frame(self._frame_suggestions, bg=COULEURS["card"])
-            cadre.pack(fill=tk.X, pady=1)
-            cadre._pid = p["id"]
-
-            nom_marque = p["nom"]
-            if p.get("marque"):
-                nom_marque += f" — {p['marque']}"
-            tk.Label(cadre, text=nom_marque, font=(POLICE, 10, "bold"),
-                     bg=COULEURS["card"], fg=COULEURS["text"],
-                     anchor="w").pack(side=tk.LEFT, padx=8, pady=4)
-
-            sv = p.get("stock_vente", p["stock"])
-            stock_label = f"{sv} en rayon"
-            stock_color = COULEURS["success"] if sv > p.get("stock_mini", 0) else COULEURS["warning"]
-            if sv <= 0:
-                stock_color = COULEURS["danger"]
-
-            tk.Label(cadre, text=fmt_money(p["prix_vente"], self.devise),
-                     font=(POLICE, 10, "bold"), bg=COULEURS["card"],
-                     fg=COULEURS["primary"]).pack(side=tk.RIGHT, padx=8)
-
-            tk.Label(cadre, text=stock_label, font=(POLICE, 8),
-                     bg=COULEURS["card"], fg=stock_color).pack(side=tk.RIGHT, padx=4)
-
-            # Clic = ajouter
-            for widget in (cadre,) + tuple(cadre.winfo_children()):
-                widget.bind("<Button-1>", lambda e, pid=p["id"]: self._ajouter_produit(pid))
-                widget.configure(cursor="hand2")
+        lb = self._lb_suggestions
+        lb.delete(0, tk.END)
 
         if not resultats:
-            tk.Label(self._frame_suggestions, text="Aucun résultat",
-                     font=(POLICE, 10), bg=COULEURS["card"],
-                     fg=COULEURS["text_secondary"]).pack(pady=8)
+            lb.insert(tk.END, "  Aucun résultat")
+            lb.configure(fg=COULEURS["text_secondary"])
+            lb.selection_clear(0, tk.END)
+        else:
+            lb.configure(fg=COULEURS["text"])
+            for p in resultats:
+                sv = p.get("stock_vente", p["stock"])
+                stock_txt = f"({sv})" if sv > 0 else "(rupture)"
+                lb.insert(tk.END, f"  {p['nom']}  —  {fmt_money(p['prix_vente'], self.devise)}  {stock_txt}")
+
+        self._frame_liste.grid()
+        self._frame_liste.configure(height=min(len(resultats), 6) * 26 + 4)
+
+    def _focus_listbox(self, event=None):
+        if self._lb_suggestions.winfo_ismapped() and self._lb_suggestions.size() > 0:
+            self._lb_suggestions.focus_set()
+            self._lb_suggestions.selection_set(0)
+            return "break"
+
+    def _clic_listbox(self, event=None):
+        sel = self._lb_suggestions.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        if idx < len(self._produits_visibles):
+            pid = self._produits_visibles[idx]["id"]
+            self._ajouter_produit(pid)
+            self._var_recherche.set("")
+            self.e_recherche.focus_set()
 
     def _ajouter_premier(self, event=None):
-        """Enter dans la recherche = ajouter le 1er résultat."""
         texte = self._var_recherche.get().strip()
         if not texte:
             return
 
-        # Chercher d'abord par scan (réf exacte ou code-barres)
         produit = db.trouver_produit(texte)
         if not produit:
             resultats = db.get_produits(search=texte, inclure_inactifs=False)
             if len(resultats) == 1:
                 produit = resultats[0]
             elif len(resultats) > 1:
-                produit = resultats[0]  # 1er résultat
+                produit = resultats[0]
             else:
-                # Produit introuvable → proposer ajout rapide
-                if messagebox.askyesno(
-                        "Produit introuvable",
-                        f"« {texte} » n'est pas dans le catalogue.\n\n"
-                        "L'ajouter maintenant ?",
-                        parent=self.root):
+                if messagebox.askyesno("Produit introuvable",
+                                       f"« {texte} » n'est pas dans le catalogue.\n\n"
+                                       "L'ajouter maintenant ?", parent=self.root):
                     self._ajout_rapide(texte)
                 return
 
@@ -186,7 +193,6 @@ class CaisseMixin:
         produit = db.get_produit(produit_id)
         if not produit:
             return
-        stock_vente = produit.get("stock_vente", produit["stock"])
         qte = int(self.var_qte.get() or 1)
 
         if produit["prix_vente"] <= 0:
@@ -195,7 +201,6 @@ class CaisseMixin:
                                    parent=self.root)
             return
 
-        # Cumuler avec la ligne existante si même produit
         for ligne in self.enregistrement:
             if ligne["id"] == produit_id:
                 ligne["quantite"] += qte
@@ -212,15 +217,13 @@ class CaisseMixin:
         self._rafraichir_enregistrement()
 
     def _ajout_rapide(self, nom_suggere=""):
-        """Creer un produit a la volee et l'ajouter."""
-        nom = simpledialog.askstring(
-            "Ajout rapide", "Nom du produit :",
-            initialvalue=nom_suggere or "", parent=self.root)
+        nom = simpledialog.askstring("Ajout rapide", "Nom du produit :",
+                                     initialvalue=nom_suggere or "", parent=self.root)
         if not nom or not nom.strip():
             return
-        prix_str = simpledialog.askstring(
-            "Ajout rapide", f"Prix de vente pour « {nom.strip()} » (F CFA) :",
-            initialvalue="", parent=self.root)
+        prix_str = simpledialog.askstring("Ajout rapide",
+                                          f"Prix de vente pour « {nom.strip()} » (F CFA) :",
+                                          initialvalue="", parent=self.root)
         if not prix_str:
             return
         try:
@@ -252,7 +255,7 @@ class CaisseMixin:
             self._ajouter_produit(pid)
             self.statut(f"✅ {nom.strip()} ajouté", COULEURS["success"])
 
-    # ── Enregistrement (ex-panier) ──
+    # ── Enregistrement ──
 
     def _rafraichir_enregistrement(self):
         for w in self._lignes_frame.winfo_children():
@@ -264,6 +267,7 @@ class CaisseMixin:
                                       font=(POLICE, 10), bg=COULEURS["card"],
                                       fg=COULEURS["text_secondary"])
             self._msg_vide.pack(pady=30)
+            self._scrollbar.pack_forget()
         else:
             for i, ligne in enumerate(self.enregistrement):
                 bg = COULEURS["row_alt"] if i % 2 == 0 else COULEURS["card"]
@@ -274,7 +278,6 @@ class CaisseMixin:
                          bg=bg, fg=COULEURS["text"], anchor="w").pack(
                     side=tk.LEFT, padx=12, pady=4)
 
-                # Quantité
                 qte_frame = tk.Frame(rang, bg=bg)
                 qte_frame.pack(side=tk.RIGHT, padx=8)
                 qte_frame.bind("<Double-1>", lambda e, idx=i: self._modifier_qte(idx))
@@ -285,27 +288,20 @@ class CaisseMixin:
                 tk.Label(qte_frame, text="(double-clic)", font=(POLICE, 7),
                          bg=bg, fg=COULEURS["text_secondary"]).pack(side=tk.LEFT)
 
-                # Prix
                 total_ligne = ligne["quantite"] * ligne["pu"]
                 tk.Label(rang, text=fmt_money(total_ligne, self.devise),
                          font=(POLICE, 10, "bold"), bg=bg,
                          fg=COULEURS["primary"]).pack(side=tk.RIGHT, padx=12)
 
-                # Bouton supprimer
                 btn_x = tk.Label(rang, text="✕", font=(POLICE, 11, "bold"),
                                  bg=bg, fg=COULEURS["danger"], cursor="hand2")
                 btn_x.pack(side=tk.RIGHT, padx=4)
                 btn_x.bind("<Button-1>", lambda e, idx=i: self._retirer_ligne(idx))
 
-        self._maj_total()
+            # Scrollbar si nécessaire
+            self.root.after(50, self._verifier_scrollbar)
 
-    def _maj_scrollbar(self, event=None):
-        """Affiche la scrollbar uniquement si des articles sont présents ET débordent."""
-        if not self.enregistrement:
-            self._scrollbar.pack_forget()
-            return
-        # after() pour laisser le canvas se stabiliser
-        self.root.after(50, self._verifier_scrollbar)
+        self._maj_total()
 
     def _verifier_scrollbar(self):
         try:
@@ -373,7 +369,6 @@ class CaisseMixin:
 
         self.enregistrement.clear()
         self._rafraichir_enregistrement()
-        self._recherche_typing()
         self._maj_badge_alertes()
         self.statut(f"✅ Vente {message} enregistrée", COULEURS["success"])
         self.e_recherche.focus_set()
