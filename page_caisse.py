@@ -58,12 +58,11 @@ class CaisseMixin:
                                           selectforeground=COULEURS["text"],
                                           activestyle="none",
                                           bd=1, relief=tk.SOLID,
-                                          highlightthickness=0)
+                                          highlightthickness=0,
+                                          exportselection=False)
         self._lb_suggestions.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self._lb_suggestions.bind("<Double-Button-1>", self._clic_listbox)
+        self._lb_suggestions.bind("<ButtonRelease-1>", self._clic_listbox)
         self._lb_suggestions.bind("<Return>", self._clic_listbox)
-        # Clic simple = ajouter
-        self._lb_suggestions.bind("<<ListboxSelect>>", self._clic_listbox)
 
         # ── Qté ──
         qte_frame = tk.Frame(c, bg=COULEURS["card"])
