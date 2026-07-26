@@ -242,13 +242,13 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
         # Séparateur
         tk.Frame(nav, bg=COULEURS["sidebar_sep"], height=1).pack(
             fill=tk.X, padx=20, pady=(6, 4))
-        tk.Label(nav, text="NAVIGATION", font=(POLICE, 8, "bold"),
+        tk.Label(nav, text="MENU", font=(POLICE, 8, "bold"),
                  bg=COULEURS["sidebar"],
                  fg=COULEURS["sidebar_text"]).pack(anchor="w", padx=22, pady=(2, 4))
 
         self.entrees_menu = [
                     ("📊", "Tableau de bord", self.afficher_dashboard, None, "F12"),
-                    ("🧾", "Caisse", self.afficher_caisse, "caisse", "F2"),
+                    ("📝", "Enregistrer vente", self.afficher_caisse, "caisse", "F2"),
                     ("📦", "Produits", self.afficher_produits, None, "F3"),
                     ("📋", "Stock", self.afficher_stock, "stock", "F4"),
                     ("👥", "Clients", self.afficher_clients, None, "F5"),
@@ -257,18 +257,8 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
                 ]
 
         self.entrees_menu_second = [
-            ("🛒", "Achats", self.afficher_achats, "stock", None),
-            ("🏬", "Dépôts", self.afficher_depots, "stock", None),
-            ("📋", "Inventaire", self.afficher_inventaire, "stock", None),
-            ("↩️", "Retours", self.afficher_retours, "caisse", None),
-            ("📉", "Prévisions", self.afficher_previsions, "stock", None),
-            ("📁", "Catégories", self.afficher_categories, "produits", None),
-            ("🏭", "Fournisseurs", self.afficher_fournisseurs, "produits", None),
-            ("📈", "Mouvements", self.afficher_mouvements, None, None),
-            ("💹", "Rapports", self.afficher_rapports, "rapports", "F6"),
-            ("⚙️", "Paramètres", self.afficher_parametres, "admin", None),
-            ("❓", "Aide", self.afficher_aide, None, "F1"),
-        ]
+                    ("⚙️", "Paramètres", self.afficher_parametres, "admin", None),
+                ]
 
         self.boutons_menu = []
 
@@ -276,14 +266,54 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
             self._ajouter_bouton_menu(nav, icone, libelle, action, droit, touche)
 
         tk.Frame(nav, bg=COULEURS["sidebar_sep"], height=1).pack(fill=tk.X, padx=20, pady=6)
-        tk.Label(nav, text="GESTION", font=(POLICE, 8, "bold"),
-                 bg=COULEURS["sidebar"],
-                 fg=COULEURS["sidebar_text"]).pack(anchor="w", padx=22, pady=(2, 4))
 
         for icone, libelle, action, droit, touche in self.entrees_menu_second:
             self._ajouter_bouton_menu(nav, icone, libelle, action, droit, touche)
 
+        # ── Bouton "Plus" pour les entrées cachées ──
+        self._btn_plus = tk.Button(
+            nav, text="    ⚙️     Plus ▸",
+            font=(POLICE, 10), bg=COULEURS["sidebar"], fg=COULEURS["sidebar_text"],
+            activebackground=COULEURS["sidebar_hover"], activeforeground="white",
+            bd=0, anchor="w", padx=0, pady=10, highlightthickness=0,
+            cursor="hand2",
+            command=self._basculer_plus)
+        self._btn_plus.pack(fill=tk.X, padx=8)
+        self._btn_plus.bind("<Enter>", lambda e: self._btn_plus.configure(bg=COULEURS["sidebar_hover"]))
+        self._btn_plus.bind("<Leave>", lambda e: self._btn_plus.configure(bg=COULEURS["sidebar"]))
+
+        # Frame caché contenant les entrées supplémentaires
+        self._frame_plus = tk.Frame(nav, bg=COULEURS["sidebar"])
+        self._plus_ouvert = False
+
+        entrees_plus = [
+            ("💹", "Rapports", self.afficher_rapports, "rapports"),
+            ("📈", "Mouvements", self.afficher_mouvements, None),
+            ("🛒", "Achats", self.afficher_achats, "stock"),
+            ("📋", "Inventaire", self.afficher_inventaire, "stock"),
+            ("↩️", "Retours", self.afficher_retours, "caisse"),
+            ("📉", "Prévisions", self.afficher_previsions, "stock"),
+            ("🏬", "Dépôts", self.afficher_depots, "stock"),
+            ("📁", "Catégories", self.afficher_categories, "produits"),
+            ("🏭", "Fournisseurs", self.afficher_fournisseurs, "produits"),
+            ("❓", "Aide", self.afficher_aide, None),
+        ]
+        for icone, libelle, action, droit in entrees_plus:
+            self._ajouter_bouton_menu(self._frame_plus, icone, libelle, action, droit, None)
+
         self._planifier(120, _maj_region)
+
+
+    def _basculer_plus(self):
+        """Affiche/masque les entrées supplémentaires."""
+        if self._plus_ouvert:
+            self._frame_plus.pack_forget()
+            self._btn_plus.configure(text="    ⚙️     Plus ▸")
+            self._plus_ouvert = False
+        else:
+            self._frame_plus.pack(after=self._btn_plus, fill=tk.X)
+            self._btn_plus.configure(text="    ⚙️     Plus ▾")
+            self._plus_ouvert = True
 
 
     def _ajouter_bouton_menu(self, parent, icone, libelle, action, droit, touche):
@@ -389,12 +419,10 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
 
     def _raccourcis(self):
         r = self.root
-        r.bind("<F1>", lambda e: self.afficher_aide())
         r.bind("<F2>", lambda e: self.afficher_caisse() if self.peut("caisse") else self._refus())
         r.bind("<F3>", lambda e: self.afficher_produits())
         r.bind("<F4>", lambda e: self.afficher_stock() if self.peut("stock") else self._refus())
         r.bind("<F5>", lambda e: self.afficher_clients())
-        r.bind("<F6>", lambda e: self.afficher_rapports() if self.peut("rapports") else self._refus())
         r.bind("<F9>", lambda e: self.afficher_creances() if self.peut("rapports") else self._refus())
         r.bind("<F10>", lambda e: self.afficher_analyse() if self.peut("rapports") else self._refus())
         r.bind("<Control-s>", lambda e: self.sauvegarder())
