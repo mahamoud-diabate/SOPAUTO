@@ -1,0 +1,6 @@
+# SODIPAC — Aucune dépendance externe requise.
+# Tkinter et SQLite sont inclus dans Python 3.11+.
+#
+# Pour le build .exe (optionnel) :
+# pip install pyinstaller
+# pyinstaller sodipac.spec

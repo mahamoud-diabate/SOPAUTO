@@ -1,20 +1,14 @@
 """
-SODIPAC - Dashboard
-Généré automatiquement depuis main.py
+SODIPAC - Tableau de bord
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
+from tkinter import ttk
 from datetime import datetime, timedelta
-from typing import Any
 
 import database as db
 import analyse_prix
 import factures
-import export_pdf
-from dialogues import (DialogueCategorie, DialogueClient, DialogueMouvement, DialoguePaiement,
-                       DialogueProduit, DialogueUtilisateur, DialogueFournisseur)
-from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, centrer_fenetre,
+from ui_widgets import (COULEURS, POLICE, Bouton, Carte, TableauTriable,
                         fmt_date, fmt_money, infobulle, zebre)
 
 
@@ -34,10 +28,44 @@ class DashboardMixin:
                    self.generer_reappro, petit=True).pack(side=tk.LEFT, padx=3)
 
         s = db.get_dashboard_stats()
+
+        # Assistant premier lancement
+        guide_vu = self.params.get("guide_vu") == "1"
+        if not guide_vu and s.get("total_produits", 0) <= 5 and s.get("nb_ventes_aujourdhui", 0) == 0:
+            self._afficher_guide_demarrage()
+
         self._kpi_dashboard(s)
         self._objectif_mois(s)
         self._activite_mois(s)
         self._panneaux_bas(s)
+
+    def _afficher_guide_demarrage(self):
+        """Guide pas-a-pas affiche au premier lancement (0 vente, <=5 produits demo)."""
+        guide = Carte(self.zone, "🚀 Bienvenue sur SODIPAC — Guide de demarrage")
+        guide.pack(fill=tk.X, pady=(0, 12))
+        c = guide.corps
+        etapes = [
+            ("1", "Parametres", "Renseignez le nom, l'adresse et le telephone de la boutique (apparait sur les factures)."),
+            ("2", "Categories", "Verifiez les 10 categories (Freinage, Moteur, Suspension...)."),
+            ("3", "Fournisseurs", "Ajoutez vos fournisseurs habituels."),
+            ("4", "Produits", "Saisissez votre catalogue (ou importez un CSV)."),
+            ("5", "Caisse", "Scannez ou cherchez un produit → Entrée → F8 pour encaisser."),
+        ]
+        for i, (num, titre, desc) in enumerate(etapes):
+            ligne = tk.Frame(c, bg=COULEURS["card"])
+            ligne.pack(fill=tk.X, pady=3)
+            tk.Label(ligne, text=num, font=(POLICE, 12, "bold"), bg=COULEURS["primary"],
+                     fg="white", width=3, height=1).pack(side=tk.LEFT, padx=(0, 8))
+            tk.Label(ligne, text=f"{titre} — {desc}", font=(POLICE, 9),
+                     bg=COULEURS["card"], fg=COULEURS["text"], wraplength=800, justify="left"
+                     ).pack(side=tk.LEFT)
+        # Bouton pour ne plus afficher
+        cadre_ok = tk.Frame(c, bg=COULEURS["card"])
+        cadre_ok.pack(fill=tk.X, pady=(8, 0))
+        Bouton(cadre_ok, "👍 J'ai compris, commencer", "success",
+               lambda: (guide.pack_forget(),
+                        db.set_parametre("guide_vu", "1")),
+               petit=True).pack(side=tk.LEFT)
 
 
     def _dessiner_graphe(self, parent, donnees, jours_affiches=7, titre_court=True):

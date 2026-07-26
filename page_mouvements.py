@@ -1,21 +1,13 @@
 """
 SODIPAC - Mouvements
-Généré automatiquement depuis main.py
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
+from tkinter import ttk
 from datetime import datetime, timedelta
-from typing import Any
 
 import database as db
-import analyse_prix
-import factures
-import export_pdf
-from dialogues import (DialogueCategorie, DialogueClient, DialogueMouvement, DialoguePaiement,
-                       DialogueProduit, DialogueUtilisateur, DialogueFournisseur)
-from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, centrer_fenetre,
-                        fmt_date, fmt_money, infobulle, zebre)
+from ui_widgets import (COULEURS, POLICE, Bouton, TableauTriable,
+                        ajouter_scrollbars, fmt_date, fmt_money, zebre)
 
 
 class MouvementsMixin:

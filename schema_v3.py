@@ -25,17 +25,9 @@ from __future__ import annotations
 SCHEMA_VERSION = 3
 
 
-# ─── Helpers (dupliqués volontairement pour éviter un import circulaire) ───
+# ─── Helpers (partagés via db_helpers pour éviter l'import circulaire) ───
 
-def _colonnes(cursor, table) -> set:
-    return {r[1] for r in cursor.execute(f"PRAGMA table_info({table})")}
-
-
-def _ajouter_colonne(cursor, table, colonne, definition) -> bool:
-    if colonne not in _colonnes(cursor, table):
-        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {colonne} {definition}")
-        return True
-    return False
+from db_helpers import colonnes as _colonnes, ajouter_colonne as _ajouter_colonne
 
 
 # ─── 1. NOUVELLES TABLES ──────────────────────────────

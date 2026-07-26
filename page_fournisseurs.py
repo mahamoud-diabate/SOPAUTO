@@ -1,21 +1,13 @@
 """
 SODIPAC - Fournisseurs
-Généré automatiquement depuis main.py
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
-from datetime import datetime, timedelta
-from typing import Any
+from tkinter import messagebox
 
 import database as db
-import analyse_prix
-import factures
-import export_pdf
-from dialogues import (DialogueCategorie, DialogueClient, DialogueMouvement, DialoguePaiement,
-                       DialogueProduit, DialogueUtilisateur, DialogueFournisseur)
-from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, centrer_fenetre,
-                        fmt_date, fmt_money, infobulle, zebre)
+from dialogues import DialogueFournisseur
+from ui_widgets import (COULEURS, Bouton, EntreeRecherche, TableauTriable,
+                        ajouter_scrollbars, zebre)
 
 
 class FournisseursMixin:

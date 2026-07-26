@@ -1,21 +1,15 @@
 """
-SODIPAC - Parametres
-Généré automatiquement depuis main.py
+SODIPAC - Paramètres
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
-from datetime import datetime, timedelta
-from typing import Any
+from tkinter import ttk, messagebox, filedialog
+import subprocess
 
 import database as db
-import analyse_prix
 import factures
-import export_pdf
-from dialogues import (DialogueCategorie, DialogueClient, DialogueMouvement, DialoguePaiement,
-                       DialogueProduit, DialogueUtilisateur, DialogueFournisseur)
-from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, centrer_fenetre,
-                        fmt_date, fmt_money, infobulle, zebre)
+from dialogues import DialogueUtilisateur
+from ui_widgets import (COULEURS, POLICE, Bouton, TableauTriable,
+                        fmt_date, zebre)
 
 
 class ParametresMixin:

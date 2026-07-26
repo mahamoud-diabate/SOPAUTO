@@ -1,21 +1,16 @@
 """
 SODIPAC - Caisse
-Généré automatiquement depuis main.py
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
-from datetime import datetime, timedelta
-from typing import Any
+from tkinter import ttk, messagebox, simpledialog
+from datetime import datetime
 
 import database as db
-import analyse_prix
 import factures
-import export_pdf
-from dialogues import (DialogueCategorie, DialogueClient, DialogueMouvement, DialoguePaiement,
-                       DialogueProduit, DialogueUtilisateur, DialogueFournisseur)
+from dialogues import DialoguePaiement
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, centrer_fenetre,
-                        fmt_date, fmt_money, infobulle, zebre)
+                        TableauTriable, ajouter_scrollbars, fmt_money,
+                        infobulle, zebre)
 
 
 class CaisseMixin:
@@ -101,10 +96,14 @@ class CaisseMixin:
 
         actions = tk.Frame(d, bg=COULEURS["card"])
         actions.pack(fill=tk.X, pady=6)
-        Bouton(actions, "➖", "warning", lambda: self._qte_rapide(-1), petit=True).pack(side=tk.LEFT, padx=2)
-        Bouton(actions, "➕", "success", lambda: self._qte_rapide(1), petit=True).pack(side=tk.LEFT, padx=2)
-        Bouton(actions, "✎ Quantité", "info", self._modifier_qte_panier, petit=True).pack(side=tk.LEFT, padx=2)
-        Bouton(actions, "🗑 Vider", "secondary", self._vider_panier, petit=True).pack(side=tk.LEFT, padx=2)
+        b1 = Bouton(actions, "➖", "warning", lambda: self._qte_rapide(-1), petit=True)
+        b1.pack(side=tk.LEFT, padx=2); infobulle(b1, "Réduire la quantité de 1")
+        b2 = Bouton(actions, "➕", "success", lambda: self._qte_rapide(1), petit=True)
+        b2.pack(side=tk.LEFT, padx=2); infobulle(b2, "Augmenter la quantité de 1")
+        b3 = Bouton(actions, "✎ Quantité", "info", self._modifier_qte_panier, petit=True)
+        b3.pack(side=tk.LEFT, padx=2); infobulle(b3, "Saisir une quantité précise")
+        b4 = Bouton(actions, "🗑 Vider", "secondary", self._vider_panier, petit=True)
+        b4.pack(side=tk.LEFT, padx=2); infobulle(b4, "Vider tout le panier")
 
         cadre_total = tk.Frame(d, bg=COULEURS["total_bg"], highlightbackground=COULEURS["border"],
                                highlightthickness=1)
@@ -117,8 +116,10 @@ class CaisseMixin:
                                          fg=COULEURS["primary"])
         self.lbl_total_panier.pack(anchor="w", padx=12, pady=(0, 10))
 
-        Bouton(d, "✅  ENCAISSER  (F8)", "success", self._encaisser,
-               pady=12).pack(fill=tk.X)
+        btn_enc = Bouton(d, "✅  ENCAISSER  (F8)", "success", self._encaisser,
+               pady=12)
+        btn_enc.pack(fill=tk.X)
+        infobulle(btn_enc, "Raccourci : F8 — Ouvre le dialogue de paiement")
         self.root.bind("<F8>", lambda e: self._encaisser())
 
         historique = tk.Frame(d, bg=COULEURS["card"])
@@ -178,16 +179,70 @@ class CaisseMixin:
                 self.recherche_caisse.var.set(code)
                 self.recherche_caisse._placeholder_actif = False
                 self._charger_catalogue_caisse()
-                self.statut(f"{len(resultats)} résultats — choisissez dans la liste",
+                self.statut(f"{len(resultats)} resultats — choisissez dans la liste",
                             COULEURS["warning"])
                 return
             else:
-                messagebox.showwarning("Introuvable", f"Aucun produit pour « {code} ».",
-                                       parent=self.root)
+                # Produit introuvable → proposer ajout rapide
+                if messagebox.askyesno(
+                        "Produit introuvable",
+                        f"« {code} » n'est pas dans le catalogue.\n\n"
+                        "Voulez-vous l'ajouter maintenant et le mettre dans le panier ?",
+                        parent=self.root):
+                    self._ajout_rapide(code)
                 return
         self._ajouter_produit_panier(produit["id"], int(self.var_qte.get() or 1))
         self.recherche_caisse.effacer()
         self.recherche_caisse.entry.focus_set()
+
+
+    def _ajout_rapide(self, nom_suggere=""):
+        """Creer un produit a la volee (nom + prix) et l'ajouter au panier."""
+        from tkinter import simpledialog
+        nom = simpledialog.askstring(
+            "Ajout rapide", "Nom du produit :",
+            initialvalue=nom_suggere or "", parent=self.root)
+        if not nom or not nom.strip():
+            return
+        prix_str = simpledialog.askstring(
+            "Ajout rapide", f"Prix de vente pour « {nom.strip()} » (F CFA) :",
+            initialvalue="", parent=self.root)
+        if not prix_str:
+            return
+        try:
+            prix = float(prix_str.replace(" ", "").replace(",", "."))
+        except ValueError:
+            messagebox.showerror("Erreur", "Prix invalide.", parent=self.root)
+            return
+        if prix <= 0:
+            messagebox.showerror("Erreur", "Le prix doit etre superieur a 0.", parent=self.root)
+            return
+
+        qte = int(self.var_qte.get() or 1)
+        ref = f"PRD-TMP-{int(datetime.now().timestamp())}"
+
+        # Chercher une categorie "Non classe" ou la premiere disponible
+        cats = db.get_categories()
+        cat_id = next((c["id"] for c in cats if c["nom"].lower().startswith("non")), None)
+        if not cat_id and cats:
+            cat_id = cats[0]["id"]
+
+        ok, msg = db.add_produit(
+            ref, nom.strip(), prix_vente=prix, prix_achat=0,
+            stock_vente=qte, stock_reserve=0, categorie_id=cat_id or 1,
+            description="Ajouté depuis la caisse")
+        if not ok:
+            messagebox.showerror("Erreur", msg, parent=self.root)
+            return
+
+        produit = db.trouver_produit(ref) or db.get_produits(search=nom.strip(), inclure_inactifs=False)
+        if produit:
+            pid = produit[0]["id"] if isinstance(produit, list) else produit["id"]
+            self._ajouter_produit_panier(pid, qte)
+            self.recherche_caisse.effacer()
+            self.recherche_caisse.entry.focus_set()
+            self._charger_catalogue_caisse()
+            self.statut(f"✅ {nom.strip()} ajoute au catalogue et au panier", COULEURS["success"])
 
 
     def _ajouter_produit_panier(self, produit_id, quantite):

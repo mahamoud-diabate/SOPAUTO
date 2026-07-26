@@ -1,21 +1,13 @@
 """
 SODIPAC - Produits
-Généré automatiquement depuis main.py
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
-from datetime import datetime, timedelta
-from typing import Any
+from tkinter import ttk, messagebox, filedialog
 
 import database as db
-import analyse_prix
-import factures
-import export_pdf
-from dialogues import (DialogueCategorie, DialogueClient, DialogueMouvement, DialoguePaiement,
-                       DialogueProduit, DialogueUtilisateur, DialogueFournisseur)
-from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, centrer_fenetre,
-                        fmt_date, fmt_money, infobulle, zebre)
+from dialogues import DialogueMouvement, DialogueProduit
+from ui_widgets import (COULEURS, POLICE, Bouton, EntreeRecherche,
+                        TableauTriable, ajouter_scrollbars, fmt_money, zebre)
 
 
 class ProduitsMixin:
@@ -59,6 +51,11 @@ class ProduitsMixin:
 
         self.var_inactifs = tk.BooleanVar(value=False)
         tk.Checkbutton(barre, text="Inclure les inactifs", variable=self.var_inactifs,
+                       bg=COULEURS["bg"], font=(POLICE, 9), activebackground=COULEURS["bg"],
+                       command=self._charger_produits).pack(side=tk.LEFT, padx=12)
+
+        self.var_a_completer = tk.BooleanVar(value=False)
+        tk.Checkbutton(barre, text="📝 À compléter", variable=self.var_a_completer,
                        bg=COULEURS["bg"], font=(POLICE, 9), activebackground=COULEURS["bg"],
                        command=self._charger_produits).pack(side=tk.LEFT)
 
@@ -116,6 +113,11 @@ class ProduitsMixin:
                                    search=self.rech_produits.get(),
                                    seulement_alertes=self.var_alertes.get(),
                                    inclure_inactifs=self.var_inactifs.get())
+        # Filtre "à compléter" : produits créés à la volée sans référence propre
+        if self.var_a_completer.get():
+            produits = [p for p in produits
+                        if not p.get("reference") or p["reference"].startswith("PRD-TMP-")
+                        or not p.get("marque") or not p.get("prix_achat")]
         t = self.tab_produits
         t.delete(*t.get_children())
         valeur_totale = 0

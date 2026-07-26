@@ -46,12 +46,7 @@ SEUIL_TOLERANCE_PCT = 2.0
 SEUIL_TENDANCE_PCT = 15.0
 
 
-def _num(valeur, defaut=0.0) -> float:
-    try:
-        return float(valeur)
-    except (TypeError, ValueError):
-        return defaut
-
+from ui_widgets import parse_float
 
 def _depuis(jours: int) -> str:
     return (datetime.now() - timedelta(days=jours)).strftime("%Y-%m-%d")
@@ -118,7 +113,7 @@ def analyse_prix_pratiques(jours: int = 90, min_ventes: int = 1,
     sql += " ORDER BY vd.produit_id, v.date_vente"
 
     lignes = conn.execute(sql, params).fetchall()
-    conn.close()
+    
 
     # Regroupement par produit
     groupes: dict[int, dict] = {}
@@ -127,22 +122,22 @@ def analyse_prix_pratiques(jours: int = 90, min_ventes: int = 1,
         g = groupes.setdefault(pid, {
             "produit_id": pid, "reference": l["reference"], "nom": l["nom"],
             "categorie_nom": l["categorie_nom"] or "Sans catégorie",
-            "prix_catalogue": _num(l["prix_catalogue"]),
-            "cout_actuel": _num(l["cout_actuel"]),
+            "prix_catalogue": parse_float(l["prix_catalogue"]),
+            "cout_actuel": parse_float(l["cout_actuel"]),
             "prix": [], "quantites": [], "couts": [],
             "ca": 0.0, "cout_total": 0.0, "qte_totale": 0,
             "nb_sous": 0, "nb_sur": 0, "nb_au_prix": 0,
             "sous_cout": 0,
         })
-        pu = _num(l["prix_unitaire"])
+        pu = parse_float(l["prix_unitaire"])
         qte = int(l["quantite"] or 0)
         catalogue = g["prix_catalogue"]
 
         g["prix"].append(pu)
         g["quantites"].append(qte)
-        g["couts"].append(_num(l["cout_vente"]))
+        g["couts"].append(parse_float(l["cout_vente"]))
         g["ca"] += pu * qte
-        g["cout_total"] += _num(l["cout_vente"]) * qte
+        g["cout_total"] += parse_float(l["cout_vente"]) * qte
         g["qte_totale"] += qte
 
         ecart_ligne_pct = ((pu - catalogue) / catalogue * 100) if catalogue else 0
@@ -153,7 +148,7 @@ def analyse_prix_pratiques(jours: int = 90, min_ventes: int = 1,
         else:
             g["nb_au_prix"] += 1
 
-        if pu < _num(l["cout_vente"]):
+        if pu < parse_float(l["cout_vente"]):
             g["sous_cout"] += 1
 
     resultat = []
@@ -315,7 +310,7 @@ def analyse_prix_par_vendeur(jours: int = 90) -> list[dict]:
         JOIN produits p ON p.id = vd.produit_id
         WHERE v.statut='validee' AND date(v.date_vente) >= date(?)
           AND p.prix_vente > 0""", (depuis,)).fetchall()
-    conn.close()
+    
 
     par_vendeur: dict[str, dict] = {}
     for l in lignes:
@@ -324,19 +319,19 @@ def analyse_prix_par_vendeur(jours: int = 90) -> list[dict]:
             "ca_reel": 0.0, "ca_theorique": 0.0, "cout": 0.0,
             "nb_sous": 0, "nb_sur": 0, "nb_sous_cout": 0})
         qte = int(l["quantite"] or 0)
-        pu = _num(l["prix_unitaire"])
-        cat = _num(l["prix_catalogue"])
+        pu = parse_float(l["prix_unitaire"])
+        cat = parse_float(l["prix_catalogue"])
         v["nb_lignes"] += 1
         v["qte"] += qte
         v["ca_reel"] += pu * qte
         v["ca_theorique"] += cat * qte
-        v["cout"] += _num(l["prix_achat"]) * qte
+        v["cout"] += parse_float(l["prix_achat"]) * qte
         ecart = ((pu - cat) / cat * 100) if cat else 0
         if ecart < -SEUIL_TOLERANCE_PCT:
             v["nb_sous"] += 1
         elif ecart > SEUIL_TOLERANCE_PCT:
             v["nb_sur"] += 1
-        if pu < _num(l["prix_achat"]):
+        if pu < parse_float(l["prix_achat"]):
             v["nb_sous_cout"] += 1
 
     resultat = []
@@ -378,7 +373,7 @@ def analyse_prix_par_client(jours: int = 180, min_lignes: int = 2) -> list[dict]
         LEFT JOIN clients c ON c.id = v.client_id
         WHERE v.statut='validee' AND date(v.date_vente) >= date(?)
           AND p.prix_vente > 0""", (depuis,)).fetchall()
-    conn.close()
+    
 
     par_client: dict[str, dict] = {}
     for l in lignes:
@@ -388,13 +383,13 @@ def analyse_prix_par_client(jours: int = 180, min_lignes: int = 2) -> list[dict]
             "type_client": l["type_client"], "nb_lignes": 0, "qte": 0,
             "ca_reel": 0.0, "ca_theorique": 0.0, "cout": 0.0, "nb_sous": 0})
         qte = int(l["quantite"] or 0)
-        pu = _num(l["prix_unitaire"])
-        cat = _num(l["prix_catalogue"])
+        pu = parse_float(l["prix_unitaire"])
+        cat = parse_float(l["prix_catalogue"])
         c["nb_lignes"] += 1
         c["qte"] += qte
         c["ca_reel"] += pu * qte
         c["ca_theorique"] += cat * qte
-        c["cout"] += _num(l["prix_achat"]) * qte
+        c["cout"] += parse_float(l["prix_achat"]) * qte
         if cat and (pu - cat) / cat * 100 < -SEUIL_TOLERANCE_PCT:
             c["nb_sous"] += 1
 
@@ -432,7 +427,7 @@ def detail_prix_produit(produit_id: int, jours: int = 365) -> dict:
         """SELECT reference, nom, prix_vente, COALESCE(cump, prix_achat) AS cout
            FROM produits WHERE id=?""", (produit_id,)).fetchone()
     if not produit:
-        conn.close()
+        
         return {"produit": None, "lignes": [], "paliers": []}
 
     lignes = conn.execute("""
@@ -442,22 +437,22 @@ def detail_prix_produit(produit_id: int, jours: int = 365) -> dict:
         WHERE vd.produit_id = ? AND v.statut='validee'
           AND date(v.date_vente) >= date(?)
         ORDER BY v.date_vente DESC""", (produit_id, depuis)).fetchall()
-    conn.close()
+    
 
-    catalogue = _num(produit["prix_vente"])
+    catalogue = parse_float(produit["prix_vente"])
     detail = []
     for l in lignes:
-        pu = _num(l["prix_unitaire"])
+        pu = parse_float(l["prix_unitaire"])
         ecart = pu - catalogue
         detail.append({
             "numero": l["numero"], "date_vente": l["date_vente"],
             "client_nom": l["client_nom"], "utilisateur": l["utilisateur"],
             "quantite": l["quantite"], "prix_unitaire": pu,
-            "cout": _num(l["prix_achat"]), "total": _num(l["total"]),
+            "cout": parse_float(l["prix_achat"]), "total": parse_float(l["total"]),
             "ecart": round(ecart, 2),
             "ecart_pct": round(ecart / catalogue * 100, 2) if catalogue else 0.0,
-            "marge_unitaire": round(pu - _num(l["prix_achat"]), 2),
-            "sous_cout": pu < _num(l["prix_achat"]),
+            "marge_unitaire": round(pu - parse_float(l["prix_achat"]), 2),
+            "sous_cout": pu < parse_float(l["prix_achat"]),
         })
 
     # Paliers de prix : quels prix reviennent le plus souvent ?
@@ -470,7 +465,7 @@ def detail_prix_produit(produit_id: int, jours: int = 365) -> dict:
 
     return {
         "produit": {"reference": produit["reference"], "nom": produit["nom"],
-                    "prix_catalogue": catalogue, "cout": _num(produit["cout"])},
+                    "prix_catalogue": catalogue, "cout": parse_float(produit["cout"])},
         "lignes": detail,
         "paliers": paliers[:8],
     }
@@ -500,7 +495,7 @@ def prix_conseille(produit_id: int, jours: int = 90,
     palier_dominant = detail["paliers"][0] if detail["paliers"] else None
 
     if marge_cible_pct is None:
-        marge_cible_pct = _num(get_parametres().get("marge_cible_pct", 30), 30)
+        marge_cible_pct = parse_float(get_parametres().get("marge_cible_pct", 30), 30)
     prix_plancher = cout * (1 + marge_cible_pct / 100) if cout else 0
 
     conseil = max(median, prix_plancher)
@@ -590,7 +585,7 @@ def tendances_ventes(fenetre_jours: int = 30, min_qte: int = 1) -> list[dict]:
           debut_recente.strftime("%Y-%m-%d"),
           debut_precedente.strftime("%Y-%m-%d"), debut_recente.strftime("%Y-%m-%d"))
     ).fetchall()
-    conn.close()
+    
 
     resultat = []
     for l in lignes:
@@ -598,8 +593,8 @@ def tendances_ventes(fenetre_jours: int = 30, min_qte: int = 1) -> list[dict]:
         qp = int(l["qte_precedente"] or 0)
         if max(qr, qp) < min_qte:
             continue
-        car = _num(l["ca_recent"])
-        cap = _num(l["ca_precedent"])
+        car = parse_float(l["ca_recent"])
+        cap = parse_float(l["ca_precedent"])
 
         if qp == 0 and qr > 0:
             var_qte, tendance = 100.0, "nouveau"
@@ -627,8 +622,8 @@ def tendances_ventes(fenetre_jours: int = 30, min_qte: int = 1) -> list[dict]:
             "reference": l["reference"],
             "nom": l["nom"],
             "categorie_nom": l["categorie_nom"] or "Sans catégorie",
-            "prix_vente": _num(l["prix_vente"]),
-            "cout": _num(l["cout"]),
+            "prix_vente": parse_float(l["prix_vente"]),
+            "cout": parse_float(l["cout"]),
             "stock": l["stock"] or 0,
             "stock_vente": l["stock_vente"] or 0,
             "qte_recente": qr,
@@ -641,7 +636,7 @@ def tendances_ventes(fenetre_jours: int = 30, min_qte: int = 1) -> list[dict]:
             "tendance": tendance,
             "libelle": libelle,
             "derniere_vente": l["derniere_vente"],
-            "capital_immobilise": round((l["stock"] or 0) * _num(l["cout"]), 2),
+            "capital_immobilise": round((l["stock"] or 0) * parse_float(l["cout"]), 2),
         })
 
     # Les plus fortes variations en premier, en valeur absolue

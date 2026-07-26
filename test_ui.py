@@ -142,7 +142,6 @@ try:
     for role, droits in (("vendeur", {"caisse"}), ("gerant", {"caisse", "produits", "stock", "rapports"})):
         with_modal = tk.Toplevel(root)
         with_modal.withdraw()
-        from ui_widgets import appliquer_theme
         # Créer une app sur la Toplevel (évite conflit de root)
         app2 = main.Application(with_modal, {"id": 2, "nom_utilisateur": "t",
                                               "role": role, "nom_complet": "T"})

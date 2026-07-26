@@ -456,3 +456,18 @@ def infobulle(widget, texte: str) -> None:
 
     widget.bind("<Enter>", afficher, add="+")
     widget.bind("<Leave>", cacher, add="+")
+
+
+# ── Utilitaire partagé ──
+def parse_float(valeur, defaut: float = 0.0) -> float:
+    """Convertit une valeur en float de manière robuste.
+
+    Gère les virgules (12,5 → 12.5), les espaces, et retourne `defaut`
+    si la conversion échoue au lieu de lever une exception.
+    """
+    try:
+        return float(str(valeur).replace(",", ".").replace(" ", ""))
+    except (TypeError, ValueError):
+        return defaut
+
+

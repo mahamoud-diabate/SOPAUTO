@@ -3,24 +3,17 @@ SODIPAC - Gestion Pièce Auto - Noyau de l'application
 Menu, navigation, thème, permissions, structure.
 """
 import os
-import sys
+import traceback
+import shutil
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
-from datetime import datetime, timedelta
-from typing import Any
+from tkinter import messagebox
+from datetime import datetime
 
 import database as db
-import analyse_prix
-import factures
-import export_pdf
-from dialogues import (DialogueCategorie, DialogueClient, DialogueMouvement, DialoguePaiement,
-                       DialogueProduit, DialogueUtilisateur, DialogueFournisseur)
-from pages_v3 import PagesV3
 from pages_analyse import PageAnalyse
-from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, ajouter_scrollbars, appliquer_theme,
+from ui_widgets import (COULEURS, POLICE, Bouton, appliquer_theme,
                         appliquer_palette, THEME_ACTUEL, centrer_fenetre,
-                        fmt_date, fmt_money, infobulle, zebre)
+                        infobulle, fmt_money)
 
 # Imports des mixins
 from page_dashboard import DashboardMixin
@@ -34,6 +27,13 @@ from page_mouvements import MouvementsMixin
 from page_parametres import ParametresMixin
 from page_rapports import RapportsMixin
 from page_aide import AideMixin
+from page_creances import CreancesMixin
+from page_achats import AchatsMixin
+from page_inventaire import InventaireMixin
+from page_vehicules import VehiculesMixin
+from page_depots import DepotsMixin
+from page_retours import RetoursMixin
+from page_previsions import PrevisionsMixin
 
 PERMISSIONS = {
     "gerant": {"caisse", "produits", "stock", "rapports"},
@@ -42,13 +42,16 @@ PERMISSIONS = {
 }
 
 
-class Application(PagesV3, PageAnalyse, DashboardMixin, CaisseMixin,
+class Application(PageAnalyse, DashboardMixin, CaisseMixin,
                   ProduitsMixin, StockMixin, ClientsMixin, CategoriesMixin,
                   FournisseursMixin, MouvementsMixin, ParametresMixin,
-                  RapportsMixin, AideMixin):
+                  RapportsMixin, AideMixin,
+                  CreancesMixin, AchatsMixin, InventaireMixin,
+                  VehiculesMixin, DepotsMixin, RetoursMixin,
+                  PrevisionsMixin):
     """Application principale SODIPAC — caisse, stock, clients, rapports.
 
-    Architecture : Application herite de 13 mixins (1 par ecran).
+    Architecture : Application hérite de 18 mixins (1 par écran).
     Chaque mixin est dans son propre fichier page_*.py.
 
     Methodes cles :
@@ -107,6 +110,10 @@ class Application(PagesV3, PageAnalyse, DashboardMixin, CaisseMixin,
             except (tk.TclError, ValueError):
                 pass
         self._apres_planifies.clear()
+        try:
+            db.close_connection()
+        except Exception:
+            pass
 
     # ── permissions ──
 
@@ -119,6 +126,16 @@ class Application(PagesV3, PageAnalyse, DashboardMixin, CaisseMixin,
             "Accès refusé",
             f"Votre rôle « {self.role} » ne permet pas cette action.\n"
             "Contactez un administrateur.", parent=self.root)
+
+    def _idx_menu(self, libelle):
+        """Retrouve l'index du bouton de menu portant ce libellé."""
+        for i, b in enumerate(getattr(self, "boutons_menu", [])):
+            try:
+                if libelle in b.cget("text"):
+                    return i
+            except tk.TclError:
+                continue
+        return -1
 
     # ─── STRUCTURE ────────────────────────────────────
 
@@ -434,6 +451,7 @@ class Application(PagesV3, PageAnalyse, DashboardMixin, CaisseMixin,
         try:
             nb = db.get_dashboard_stats()["nb_alertes"]
         except Exception:
+            traceback.print_exc()
             nb = 0
         try:
             if self.lbl_alertes.winfo_exists():
@@ -466,7 +484,7 @@ class Application(PagesV3, PageAnalyse, DashboardMixin, CaisseMixin,
         try:
             db.sauvegarder_base()
         except Exception:
-            pass
+            traceback.print_exc()
         self._sync_cloud()
         self.root.destroy()
 
@@ -479,15 +497,13 @@ class Application(PagesV3, PageAnalyse, DashboardMixin, CaisseMixin,
         if not dossier or not os.path.isdir(dossier):
             return
         try:
-            import shutil
             # Forcer l'écriture du WAL dans le .db principal
             conn = db.get_connection()
             conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-            conn.close()
             cible = os.path.join(dossier, "gestion_piece_auto.db")
             shutil.copy2(db.DB_PATH, cible)
         except Exception:
-            pass  # silencieux — ne jamais bloquer la caisse
+            traceback.print_exc()  # ne jamais bloquer la caisse, mais tracer l'erreur
 
     def sauvegarder(self):
         try:
