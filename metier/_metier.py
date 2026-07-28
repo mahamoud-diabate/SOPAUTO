@@ -410,8 +410,7 @@ def solde_client(client_id: int) -> float:
 
 def verifier_plafond_credit(client_id: int | None, montant: float) -> tuple[bool, str]:
     """
-    Vérifie qu'une nouvelle vente à crédit ne dépasse pas le plafond du client.
-    Retourne (autorise, message).
+    Vérifie l'éligibilité d'une vente à crédit. Exige un client valide identifié.
     """
     params = get_parametres()
     if params.get("credit_autorise", "1") != "1":
@@ -420,21 +419,19 @@ def verifier_plafond_credit(client_id: int | None, montant: float) -> tuple[bool
         return False, "Une vente à crédit exige un client identifié"
 
     conn = get_connection()
-    row = conn.execute("SELECT nom, plafond_credit FROM clients WHERE id=?",
-                       (client_id,)).fetchone()
-    
+    row = conn.execute("SELECT nom, plafond_credit FROM clients WHERE id=?", (client_id,)).fetchone()
     if not row:
         return False, "Client introuvable"
 
     plafond = parse_float(row["plafond_credit"]) or parse_float(params.get("credit_plafond_defaut", 0))
-    if plafond <= 0:
-        return False, (f"« {row['nom']} » n'a pas de plafond de crédit défini. "
-                       f"Renseignez-le dans sa fiche client.")
     encours = solde_client(client_id)
-    if encours + parse_float(montant) > plafond:
-        return False, (f"Plafond dépassé pour « {row['nom']} » : encours {encours:,.0f} "
-                       f"+ {parse_float(montant):,.0f} > plafond {plafond:,.0f}")
-    return True, f"Crédit autorisé (encours {encours:,.0f} / plafond {plafond:,.0f})"
+
+    # Si aucun plafond n'est spécifié (<= 0), le crédit est autorisé sans limite arbitraire
+    if plafond > 0 and (encours + parse_float(montant) > plafond):
+        return False, (f"Plafond de crédit dépassé pour « {row['nom']} » : encours {encours:,.0f} "
+                       f"+ vente {parse_float(montant):,.0f} > plafond autorisé {plafond:,.0f}")
+
+    return True, f"Crédit autorisé (encours {encours:,.0f})"
 
 
 def encaisser_creance(vente_id: int, montant: float, mode_paiement: str = "Espèces",

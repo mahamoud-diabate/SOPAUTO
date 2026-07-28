@@ -32,7 +32,7 @@ def _init():
     import time, random
     # DB unique pour ce test
     unique = f"test_critical_{int(time.time()*1000)}_{random.randint(0,9999)}"
-    db_path = os.path.join(BASE, f"{unique}.db")
+    db_path = os.path.join(tempfile.gettempdir(), f"{unique}.db")
     db.DB_PATH = db_path
     # Forcer la fermeture de toute connexion précédente avant init
     try:
@@ -66,7 +66,7 @@ def test_sync_cloud_dossier_valide():
         # Forcer WAL checkpoint puis copie
         conn = db.get_connection()
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        conn.close()
+        # NE PAS fermer la connexion persistante
         
         cible = os.path.join(dossier_temp, "gestion_piece_auto.db")
         shutil.copy2(db.DB_PATH, cible)
@@ -88,7 +88,6 @@ def test_sync_cloud_dossier_invalide():
     # Ne doit pas planter
     if not dossier or not os.path.isdir(dossier):
         pass  # Comportement attendu : retour silencieux
-    
 
 
 def test_sync_cloud_sans_parametre():
@@ -100,7 +99,6 @@ def test_sync_cloud_sans_parametre():
     # Le paramètre peut être absent ou vide — dans les deux cas, OK
     assert not dossier or not os.path.isdir(dossier), \
         "Sans dossier_synchro valide, _sync_cloud ne doit rien faire"
-    
 
 
 def test_tracer_prix_insertion():
@@ -120,20 +118,19 @@ def test_tracer_prix_insertion():
     with conn:
         db._tracer_prix(conn, pid, "vente", 2000, 2500, 
                          origine="test", tiers="", reference_doc="TEST")
-    conn.close()
+    # NE PAS fermer la connexion persistante
     
     # Vérifier l'enregistrement
     conn = db.get_connection()
     row = conn.execute(
         "SELECT * FROM prix_historique WHERE produit_id=? AND type_prix='vente'",
         (pid,)).fetchone()
-    conn.close()
+    # NE PAS fermer la connexion persistante
     
     assert row is not None, "Le changement de prix devrait être enregistré"
     assert abs(row["ancien_prix"] - 2000) < 0.1
     assert abs(row["nouveau_prix"] - 2500) < 0.1
     assert row["origine"] == "test"
-    
 
 
 def test_tracer_prix_pas_de_changement():
@@ -147,17 +144,16 @@ def test_tracer_prix_pas_de_changement():
     conn = db.get_connection()
     with conn:
         db._tracer_prix(conn, pid, "vente", 2000, 2000.001)
-    conn.close()
+    # NE PAS fermer la connexion persistante
     
     # Aucun enregistrement ne devrait avoir été créé
     conn = db.get_connection()
     count = conn.execute(
         "SELECT COUNT(*) FROM prix_historique WHERE produit_id=?", 
         (pid,)).fetchone()[0]
-    conn.close()
+    # NE PAS fermer la connexion persistante
     
     assert count == 0, "Pas de changement → pas d'enregistrement"
-    
 
 
 def test_maj_cump_calcul():
@@ -176,7 +172,7 @@ def test_maj_cump_calcul():
     conn = db.get_connection()
     with conn:
         nouveau_cump = m3._maj_cump(conn, pid, 5, 1500, origine="test")
-    conn.close()
+    # NE PAS fermer la connexion persistante
     
     cump_attendu = round((10 * 1000 + 5 * 1500) / 15, 2)  # 1166.67
     assert abs(nouveau_cump - cump_attendu) < 0.1, \
@@ -186,7 +182,6 @@ def test_maj_cump_calcul():
     produit = db.get_produit(pid)
     assert abs(produit["cump"] - cump_attendu) < 0.1, \
         f"CUMP en base: {produit['cump']}, attendu: {cump_attendu}"
-    
 
 
 def test_maj_cump_stock_zero():
@@ -207,7 +202,6 @@ def test_maj_cump_stock_zero():
     assert produit["cump"] is not None
     assert abs(produit["cump"] - 2000) < 0.1, \
         f"CUMP sur stock vide devrait être 2000, obtenu: {produit['cump']}"
-    
 
 
 def test_regression_aucun_except_pass_silencieux():

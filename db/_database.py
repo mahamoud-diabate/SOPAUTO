@@ -62,6 +62,14 @@ def get_connection() -> sqlite3.Connection:
         _conn_persistante.row_factory = sqlite3.Row
         _conn_persistante.execute("PRAGMA foreign_keys = ON")
         _conn_persistante.execute("PRAGMA journal_mode = WAL")
+    # Si la connexion a été fermée extérieurement, la recréer
+    try:
+        _conn_persistante.execute("SELECT 1")
+    except sqlite3.ProgrammingError:
+        _conn_persistante = sqlite3.connect(DB_PATH, timeout=10)
+        _conn_persistante.row_factory = sqlite3.Row
+        _conn_persistante.execute("PRAGMA foreign_keys = ON")
+        _conn_persistante.execute("PRAGMA journal_mode = WAL")
     return _conn_persistante
 
 
@@ -474,7 +482,8 @@ def get_utilisateurs() -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def add_utilisateur(nom_utilisateur: str, mot_de_passe: str, role: str = "utilisateur", nom_complet: str = "") -> tuple[bool, str]:
+def add_utilisateur(nom_utilisateur: str, mot_de_passe: str,
+                    role: str = "utilisateur", nom_complet: str = "") -> tuple[bool, str]:
     if len(mot_de_passe) < 4:
         return False, "Le mot de passe doit faire au moins 4 caractères"
     conn = get_connection()
@@ -501,7 +510,8 @@ def _dernier_admin_actif(conn, id) -> bool:
     return nb <= 1
 
 
-def update_utilisateur(id: int, role: Any = None, nom_complet: Any = None, actif: Any = None, mot_de_passe: Any = None) -> tuple[bool, str]:
+def update_utilisateur(id: int, role: Any = None, nom_complet: Any = None,
+                       actif: Any = None, mot_de_passe: Any = None) -> tuple[bool, str]:
     conn = get_connection()
     # Protection : ne pas rétrograder/désactiver le dernier administrateur actif
     if ((role is not None and role != "superviseur") or actif is False or actif == 0) \
@@ -610,7 +620,8 @@ def get_fournisseurs(search: str = "") -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def add_fournisseur(nom: str, contact: str = "", telephone: str = "", email: str = "", adresse: str = "") -> tuple[bool, str]:
+def add_fournisseur(nom: str, contact: str = "", telephone: str = "",
+                    email: str = "", adresse: str = "") -> tuple[bool, str]:
     if not nom.strip():
         return False, "Le nom est requis"
     conn = get_connection()
@@ -623,7 +634,8 @@ def add_fournisseur(nom: str, contact: str = "", telephone: str = "", email: str
     return True, "Fournisseur ajouté"
 
 
-def update_fournisseur(id: int, nom, contact: str = "", telephone: str = "", email: str = "", adresse: str = "") -> tuple[bool, str]:
+def update_fournisseur(id: int, nom, contact: str = "", telephone: str = "",
+                       email: str = "", adresse: str = "") -> tuple[bool, str]:
     conn = get_connection()
     with conn:
         conn.execute(
@@ -651,7 +663,10 @@ def get_clients(search: str = "") -> list[dict]:
     base = """SELECT c.*,
                      (SELECT COUNT(*) FROM ventes v WHERE v.client_id=c.id) AS nb_achats,
                      (SELECT COALESCE(SUM(v.total),0) FROM ventes v
-                       WHERE v.client_id=c.id AND v.statut!='annulee') AS total_achats
+                       WHERE v.client_id=c.id AND v.statut!='annulee') AS total_achats,
+                     (SELECT COALESCE(SUM(v.total - v.montant_paye),0) FROM ventes v
+                       WHERE v.client_id=c.id AND v.statut!='annulee'
+                         AND (v.total - v.montant_paye) > 0) AS solde_creances
               FROM clients c"""
     if search:
         s = f"%{search}%"
@@ -663,25 +678,27 @@ def get_clients(search: str = "") -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def add_client(nom: str, telephone: str = "", email: str = "", adresse: str = "", vehicule: str = "", notes: str = "") -> tuple[bool, str]:
+def add_client(nom: str, telephone: str = "", email: str = "", adresse: str = "",
+               vehicule: str = "", notes: str = "", plafond_credit: float = 0) -> tuple[bool, str]:
     if not nom.strip():
         return False, "Le nom est requis"
     conn = get_connection()
     with conn:
-        conn.execute("""INSERT INTO clients (nom, telephone, email, adresse, vehicule, notes)
-                        VALUES (?, ?, ?, ?, ?, ?)""",
-                     (nom.strip(), telephone, email, adresse, vehicule, notes))
+        conn.execute("""INSERT INTO clients (nom, telephone, email, adresse, vehicule, notes, plafond_credit)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                     (nom.strip(), telephone, email, adresse, vehicule, notes, float(plafond_credit or 0)))
     
     log_action("Ajout client", nom)
     return True, "Client ajouté"
 
 
-def update_client(id: int, nom, telephone: str = "", email: str = "", adresse: str = "", vehicule: str = "", notes: str = "") -> tuple[bool, str]:
+def update_client(id: int, nom, telephone: str = "", email: str = "", adresse: str = "",
+                  vehicule: str = "", notes: str = "", plafond_credit: float = 0.0) -> tuple[bool, str]:
     conn = get_connection()
     with conn:
-        conn.execute("""UPDATE clients SET nom=?, telephone=?, email=?, adresse=?, vehicule=?, notes=?
+        conn.execute("""UPDATE clients SET nom=?, telephone=?, email=?, adresse=?, vehicule=?, notes=?, plafond_credit=?
                         WHERE id=?""",
-                     (nom.strip(), telephone, email, adresse, vehicule, notes, id))
+                     (nom.strip(), telephone, email, adresse, vehicule, notes, float(plafond_credit or 0), id))
     
     log_action("Modification client", nom)
     return True, "Client modifié"
@@ -760,6 +777,116 @@ def trouver_produit(code: str) -> dict | None:
         (code.strip(), code.strip())).fetchone()
     
     return dict(row) if row else None
+
+
+def dernier_prix_negocie(produit_id: int, client_nom: str) -> dict | None:
+    """
+    v3 — Dernier prix vendu à CE client pour CE produit (traçabilité négociation).
+    Cherche dans prix_historique (tiers=client_nom, type_prix='vente'), le plus récent.
+    Retourne {"prix": float, "date": str, "ecart_pct": float} ou None.
+    """
+    if not produit_id or not client_nom:
+        return None
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            """SELECT nouveau_prix, ancien_prix, date_prix FROM prix_historique
+               WHERE produit_id=? AND type_prix='vente' AND tiers=?
+               ORDER BY date_prix DESC LIMIT 1""",
+            (produit_id, client_nom)).fetchone()
+    except sqlite3.Error:
+        return None
+    if not row:
+        return None
+    ancien = _num_safe(row["ancien_prix"])
+    nouveau = _num_safe(row["nouveau_prix"])
+    ecart_pct = ((nouveau - ancien) / ancien * 100) if ancien > 0 else 0.0
+    return {"prix": nouveau, "date": row["date_prix"], "ecart_pct": ecart_pct}
+
+
+def get_dernier_prix_client(produit_id: int, client_id: int = None, client_nom: str = "") -> dict | None:
+    """Retourne le dernier prix pratiqué pour ce produit avec ce client (via ID ou nom)."""
+    if not produit_id:
+        return None
+    conn = get_connection()
+    row = None
+    if client_id:
+        try:
+            row = conn.execute("""
+                SELECT vd.prix_unitaire, vd.prix_achat, v.date_vente, vd.quantite, v.numero
+                FROM ventes_details vd
+                JOIN ventes v ON vd.vente_id = v.id
+                WHERE v.client_id = ? AND vd.produit_id = ? AND v.statut != 'annulee'
+                ORDER BY v.date_vente DESC, v.id DESC LIMIT 1
+            """, (client_id, produit_id)).fetchone()
+        except sqlite3.Error:
+            pass
+    if not row and client_nom and client_nom.strip():
+        try:
+            row = conn.execute("""
+                SELECT vd.prix_unitaire, vd.prix_achat, v.date_vente, vd.quantite, v.numero
+                FROM ventes_details vd
+                JOIN ventes v ON vd.vente_id = v.id
+                WHERE LOWER(v.client_nom) = LOWER(?) AND vd.produit_id = ? AND v.statut != 'annulee'
+                ORDER BY v.date_vente DESC, v.id DESC LIMIT 1
+            """, (client_nom.strip(), produit_id)).fetchone()
+        except sqlite3.Error:
+            pass
+
+    if row:
+        return {
+            "prix": float(row["prix_unitaire"]),
+            "date": str(row["date_vente"]),
+            "quantite": int(row["quantite"]),
+            "numero": str(row["numero"] or "")
+        }
+
+    if client_nom:
+        res = dernier_prix_negocie(produit_id, client_nom)
+        if res:
+            return {"prix": res["prix"], "date": res["date"], "quantite": 1, "numero": ""}
+    return None
+
+
+def meiller_trigramme(texte: str, defaut: str = "GEN") -> str:
+    """Extrait un code 3-lettres significatif à partir d'un texte."""
+    if not texte or not str(texte).strip():
+        return defaut
+    mots = [m for m in str(texte).upper().replace("-", " ").replace("_", " ").split() if m]
+    if not mots:
+        return defaut
+    if len(mots) >= 2:
+        code = "".join(m[0] for m in mots[:3])
+        if len(code) < 3 and len(mots[0]) >= 2:
+            code = mots[0][:2] + mots[1][0]
+    else:
+        code = mots[0][:3]
+    code = "".join(c for c in code if c.isalnum()).upper()
+    return code.ljust(3, "X")[:3]
+
+
+def suggerer_reference_intelligente(prefixe: str = "", categorie_code: str = "", designation: str = "") -> str:
+    """
+    Génère dynamiquement une référence métier pièces auto (ex: FRE-TOY-PFR-001)
+    basée sur la Catégorie, la Marque et la Désignation.
+    """
+    conn = get_connection()
+    cat_code = meiller_trigramme(categorie_code or prefixe or "PRD", "PRD")
+    marque_code = meiller_trigramme(prefixe if categorie_code else "", "GEN")
+    desig_code = meiller_trigramme(designation, "ART")
+
+    if marque_code == "GEN" or marque_code == cat_code:
+        base_code = f"{cat_code}-{desig_code}"
+    else:
+        base_code = f"{cat_code}-{marque_code}-{desig_code}"
+
+    n = 1
+    ref = f"{base_code}-{n:03d}"
+    while conn.execute("SELECT 1 FROM produits WHERE reference=?", (ref,)).fetchone():
+        n += 1
+        ref = f"{base_code}-{n:03d}"
+
+    return ref
 
 
 def suggerer_reference(categorie_id: int = None) -> str:
@@ -916,6 +1043,8 @@ def add_mouvement(produit_id, type_mouvement, quantite, prix_unitaire=0,
                 return False, "Produit introuvable"
             stock_avant = prod["stock"]
 
+            cible_emp = cible if cible in ("reserve", "vente") else "vente"
+
             if type_mouvement == "transfert":
                 # Transfert entre réserve et vente
                 if cible == "vente":
@@ -939,7 +1068,6 @@ def add_mouvement(produit_id, type_mouvement, quantite, prix_unitaire=0,
                 stock_apres = sr + sv
             else:
                 # entree / sortie / correction
-                cible_emp = cible if cible in ("reserve", "vente") else "vente"
                 sr = prod["stock_reserve"]
                 sv = prod["stock_vente"]
 
@@ -964,7 +1092,8 @@ def add_mouvement(produit_id, type_mouvement, quantite, prix_unitaire=0,
                         sr = quantite
                     else:
                         sv = quantite
-                    notes = notes or f"Correction {cible_emp} : {prod[{'reserve': 'stock_reserve', 'vente': 'stock_vente'}[cible_emp]]} → {quantite}"
+                    anc_val = prod['stock_reserve'] if cible_emp == 'reserve' else prod['stock_vente']
+                    notes = notes or f"Correction {cible_emp} : {anc_val} → {quantite}"
 
                 stock_apres = sr + sv
 
@@ -1016,6 +1145,12 @@ def add_mouvement(produit_id, type_mouvement, quantite, prix_unitaire=0,
         return True, f"Stock mis à jour : {stock_avant} → {stock_apres}"
     finally:
         pass
+
+
+def transferer_stock_depot(produit_id, quantite, source='reserve', destination='vente'):
+    """Raccourci pour transférer du stock entre deux emplacements."""
+    cible = "vente" if destination == "vente" else "reserve"
+    return add_mouvement(produit_id, "transfert", quantite, 0, cible=cible)
 
 
 def get_mouvements(produit_id=None, limit=500, type_mouvement=None,
@@ -1131,24 +1266,28 @@ def _controler_credit(conn, client_id, montant) -> tuple[bool, str]:
         return False, ("Une vente à crédit exige un client identifié. "
                        "Sélectionnez ou créez le client.")
 
-    row = conn.execute("SELECT nom, plafond_credit FROM clients WHERE id=?",
-                       (client_id,)).fetchone()
+    row = conn.execute("SELECT nom, plafond_credit FROM clients WHERE id=?", (client_id,)).fetchone()
     if not row:
         return False, "Client introuvable"
 
-    plafond = _num_safe(row["plafond_credit"]) or _num_safe(
-        params.get("credit_plafond_defaut", 0))
+    plafond = _num_safe(row["plafond_credit"])
     if plafond <= 0:
-        return False, (f"« {row['nom']} » n'a pas de plafond de crédit. "
-                       f"Renseignez-le dans sa fiche client avant de vendre à crédit.")
+        return False, f"Crédit refusé : le client « {row['nom']} » n'a pas de plafond de crédit autorisé"
 
-    encours = _num_safe(conn.execute(
-        "SELECT COALESCE(SUM(reste_du),0) FROM v_creances WHERE client_id=?",
-        (client_id,)).fetchone()[0])
-    if encours + _num_safe(montant) > plafond:
-        return False, (f"Plafond de crédit dépassé pour « {row['nom']} » :\n"
-                       f"encours {encours:,.0f} + {_num_safe(montant):,.0f} "
-                       f"> plafond {plafond:,.0f} F CFA")
+    row_enc = conn.execute("""
+        SELECT COALESCE(SUM(v.total - (v.montant_paye + COALESCE((
+            SELECT SUM(r.montant) FROM reglements r
+            WHERE r.vente_id = v.id AND r.sens = 'encaissement'
+        ), 0))), 0) AS encours
+        FROM ventes v
+        WHERE v.client_id=? AND v.mode_paiement='Crédit' AND v.statut='validee'
+    """, (client_id,)).fetchone()
+    encours = _num_safe(row_enc["encours"]) if row_enc else 0.0
+
+    if encours + _num_safe(montant) > plafond + 0.01:
+        return False, (f"Plafond de crédit dépassé pour « {row['nom']} » : encours {encours:,.0f} "
+                       f"+ vente {_num_safe(montant):,.0f} > plafond autorisé {plafond:,.0f}")
+
     return True, "OK"
 
 
@@ -1171,7 +1310,13 @@ def create_vente(client_nom, items, remise=0, mode_paiement="Espèces",
     # par (produit, prix) pour ne pas écraser un prix différent (total faux sinon).
     cumul = {}      # pid -> qty totale (contrôle de stock)
     groupes = {}    # (pid, pu) -> qty (lignes de vente)
-    for pid, qty, pu in items:
+    for item in items:
+        if isinstance(item, dict):
+            pid = item.get("id") or item.get("produit_id")
+            qty = item.get("quantite") or item.get("qty", 1)
+            pu = item.get("pu") or item.get("prix_unitaire") or item.get("prix", 0)
+        else:
+            pid, qty, pu = item[0], item[1], item[2]
         qty = int(qty)
         if qty <= 0:
             return False, "Quantité invalide", None
@@ -1231,15 +1376,24 @@ def create_vente(client_nom, items, remise=0, mode_paiement="Espèces",
             conn.execute("UPDATE ventes SET numero=? WHERE id=?", (numero, vente_id))
 
             for (pid, pu), qty in groupes.items():
-                prod = conn.execute("SELECT stock, stock_vente, prix_achat FROM produits WHERE id=?", (pid,)).fetchone()
+                prod = conn.execute(
+                    "SELECT stock, stock_vente, prix_achat, prix_vente FROM produits WHERE id=?",
+                    (pid,)).fetchone()
                 conn.execute(
                     """INSERT INTO ventes_details (vente_id, produit_id, quantite, prix_unitaire,
                        total, prix_achat) VALUES (?, ?, ?, ?, ?, ?)""",
                     (vente_id, pid, qty, pu, qty * pu, prod["prix_achat"]))
+                # v3 : traçabilité des prix négociés — écart vs catalogue conservé
+                # dans prix_historique (tiers = client), pour cohérence future.
+                _tracer_prix(conn, pid, "vente", prod["prix_vente"], pu,
+                             origine="negociation_caisse",
+                             tiers=(client_nom or "Client de passage"),
+                             reference_doc=numero)
                 nouveau_stock = prod["stock"] - qty
                 nouveau_vente = prod["stock_vente"] - qty
-                conn.execute("UPDATE produits SET stock=?, stock_vente=?, date_modification=CURRENT_TIMESTAMP WHERE id=?",
-                             (nouveau_stock, nouveau_vente, pid))
+                conn.execute(
+                    "UPDATE produits SET stock=?, stock_vente=?, date_modification=CURRENT_TIMESTAMP WHERE id=?",
+                    (nouveau_stock, nouveau_vente, pid))
                 # v3 : décrémenter le stock du/des dépôt(s) de vente
                 _decrementer_depots_vente(conn, pid, qty, depot_id)
                 conn.execute(
@@ -1338,8 +1492,9 @@ def annuler_vente(vente_id: int, motif: str = "") -> tuple[bool, str]:
                     continue
                 nouveau_stock = prod["stock"] + l["quantite"]
                 nouveau_vente = prod["stock_vente"] + l["quantite"]
-                conn.execute("UPDATE produits SET stock=?, stock_vente=?, date_modification=CURRENT_TIMESTAMP WHERE id=?",
-                             (nouveau_stock, nouveau_vente, l["produit_id"]))
+                conn.execute(
+                    "UPDATE produits SET stock=?, stock_vente=?, date_modification=CURRENT_TIMESTAMP WHERE id=?",
+                    (nouveau_stock, nouveau_vente, l["produit_id"]))
                 # v3 : remettre en stock dans le dépôt d'origine de la vente
                 _incrementer_depot(conn, l["produit_id"], l["quantite"], vente["depot_id"])
                 conn.execute(
@@ -1352,13 +1507,14 @@ def annuler_vente(vente_id: int, motif: str = "") -> tuple[bool, str]:
                      vente["depot_id"]))
 
             conn.execute("UPDATE ventes SET statut='annulee' WHERE id=?", (vente_id,))
-        log_action("Annulation vente", f"{vente['numero']} {motif}")
+        log_action("Annulation Vente", f"{vente['numero']} - {vente['total']:,.0f}")
         return True, f"Vente {vente['numero']} annulée, stock restauré"
     finally:
         pass
 
 
-def get_ventes(limit: int = 200, date_debut: Any = None, date_fin: Any = None, search: str = "", inclure_annulees: bool = True) -> list[dict]:
+def get_ventes(limit: int = 200, date_debut: Any = None, date_fin: Any = None,
+               search: str = "", inclure_annulees: bool = True) -> list[dict]:
     conn = get_connection()
     query = """SELECT v.*, COALESCE(v.statut,'validee') AS statut_v,
                       (SELECT COUNT(*) FROM ventes_details d WHERE d.vente_id=v.id) AS nb_lignes
@@ -1396,6 +1552,15 @@ def get_vente_details(vente_id: int) -> tuple[dict | None, list[dict]]:
 
 
 # ─── STATISTIQUES / RAPPORTS ────────────────────────
+
+def get_nb_alertes() -> int:
+    """Retourne instantanément le nombre de produits en alerte ou rupture de stock."""
+    conn = get_connection()
+    try:
+        sql = "SELECT COUNT(*) FROM produits WHERE stock <= stock_mini AND COALESCE(actif,1)=1"
+        return conn.execute(sql).fetchone()[0]
+    except Exception:
+        return 0
 
 def get_dashboard_stats() -> dict:
     conn = get_connection()
@@ -1713,7 +1878,7 @@ def importer_produits_csv(chemin: str) -> tuple[bool, str, int, int]:
 
 
 def sauvegarder_base(max_conserver: int = 30) -> str:
-    """Copie sécurisée de la base (checkpoint WAL inclus) + rotation."""
+    """Copie sécurisée de la base (checkpoint WAL inclus) + miroir externe (Cloud/USB) + rotation."""
     os.makedirs(BACKUP_DIR, exist_ok=True)
     cible = os.path.join(BACKUP_DIR, f"sauvegarde_{datetime.now():%Y%m%d_%H%M%S}.db")
     conn = get_connection()
@@ -1725,14 +1890,27 @@ def sauvegarder_base(max_conserver: int = 30) -> str:
         dest.close()
     finally:
         pass
+
+    # Miroir vers dossier externe si configuré (ex: Google Drive, OneDrive, Clé USB)
+    try:
+        params = get_parametres()
+        dir_ext = params.get("dossier_sauvegarde_externe", "").strip()
+        if dir_ext and os.path.exists(dir_ext):
+            shutil.copy2(cible, os.path.join(dir_ext, os.path.basename(cible)))
+    except Exception:
+        pass
+
     # Rotation : on garde les `max_conserver` sauvegardes automatiques les plus récentes
-    autos = sorted(f for f in os.listdir(BACKUP_DIR)
-                   if f.startswith("sauvegarde_") and f.endswith(".db"))
-    for ancien in autos[:-max_conserver]:
-        try:
-            os.remove(os.path.join(BACKUP_DIR, ancien))
-        except OSError:
-            pass
+    autos = sorted([f for f in os.listdir(BACKUP_DIR)
+                    if (f.startswith("sauvegarde_") or "backup" in f or f.endswith(".db"))
+                    and os.path.isfile(os.path.join(BACKUP_DIR, f))],
+                   key=lambda f: os.path.getmtime(os.path.join(BACKUP_DIR, f)))
+    if len(autos) > max_conserver:
+        for ancien in autos[:-max_conserver]:
+            try:
+                os.remove(os.path.join(BACKUP_DIR, ancien))
+            except OSError:
+                pass
     log_action("Sauvegarde base", os.path.basename(cible))
     return cible
 
@@ -1767,7 +1945,7 @@ def restaurer_base(chemin: str) -> tuple[bool, str]:
     # is locked" liés au journal WAL sous Windows.
     derniere_erreur = None
     for tentative in range(5):
-        source = cible = None
+        source = None
         try:
             source = sqlite3.connect(chemin)
             cible = get_connection()
@@ -1780,12 +1958,14 @@ def restaurer_base(chemin: str) -> tuple[bool, str]:
             derniere_erreur = e
             time.sleep(0.5)
         finally:
-            for c in (source, cible):
-                if c is not None:
-                    try:
-                        c.close()
-                    except sqlite3.Error:
-                        pass
+            if source is not None:
+                try:
+                    source.close()
+                except sqlite3.Error:
+                    pass
+            # ⚠ Ne JAMAIS fermer cible — c'est la connexion persistante _conn_persistante.
+            # On la reconnecte proprement après un backup/restore.
+            close_connection()  # reset _conn_persistante à None → le prochain appel recrée
 
     return False, (f"Restauration impossible : {derniere_erreur}\n"
                    "Fermez les autres fenêtres du logiciel puis réessayez.")

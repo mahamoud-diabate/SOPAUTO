@@ -394,19 +394,20 @@ except ZeroDivisionError as e:
 
 
 # ═══════════════════════════════════════════════
-print("\n" + "=" * 54)
-if echoues:
-    print(f"RESULTAT : {reussis} reussis, {len(echoues)} ECHOUES")
-    for e in echoues:
-        print(f"   - {e}")
-else:
-    print(f"RESULTAT : {reussis} reussis, 0 echoues")
-print("=" * 54)
+if __name__ == '__main__':
+    print("\n" + "=" * 54)
+    if echoues:
+        print(f"RESULTAT : {reussis} reussis, {len(echoues)} ECHOUES")
+        for e in echoues:
+            print(f"   - {e}")
+    else:
+        print(f"RESULTAT : {reussis} reussis, 0 echoues")
+    print("=" * 54)
 
-for suffixe in ("", "-wal", "-shm"):
-    try:
-        os.remove(DB_TEST + suffixe)
-    except OSError:
-        pass
+    for suffixe in ("", "-wal", "-shm"):
+        try:
+            os.remove(DB_TEST + suffixe)
+        except OSError:
+            pass
 
-sys.exit(1 if echoues else 0)
+    sys.exit(1 if echoues else 0)

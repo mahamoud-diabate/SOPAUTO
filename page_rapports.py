@@ -9,7 +9,7 @@ import database as db
 import export_pdf
 import factures
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte, EntreeRecherche,
-                        TableauTriable, fmt_date, fmt_money, zebre)
+                        TableauTriable, ajouter_scrollbars, fmt_date, fmt_money, zebre)
 
 
 class RapportsMixin:
@@ -70,32 +70,38 @@ class RapportsMixin:
 
         c1 = Carte(colonnes, "Détail par produit")
         c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
-        self.tab_rap_produits = TableauTriable(c1.corps, [
+        f_tree_rp = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_rp.pack(fill=tk.BOTH, expand=True)
+        self.tab_rap_produits = TableauTriable(f_tree_rp, [
             ("ref", "Réf.", 90, "w", False),
             ("nom", "Produit", 200, "w", False),
             ("qte", "Qté", 60, "center", True),
             ("ca", "CA", 110, "e", True),
             ("marge", "Marge", 110, "e", True)], height=14)
-        self.tab_rap_produits.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_rp, self.tab_rap_produits)
 
         droite = tk.Frame(colonnes, bg=COULEURS["bg"])
         droite.pack(side=tk.LEFT, fill=tk.BOTH, padx=(6, 0))
 
         c2 = Carte(droite, "Par catégorie")
         c2.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
-        self.tab_rap_cat = TableauTriable(c2.corps, [
+        f_tree_rc = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_rc.pack(fill=tk.BOTH, expand=True)
+        self.tab_rap_cat = TableauTriable(f_tree_rc, [
             ("cat", "Catégorie", 150, "w", False),
             ("qte", "Qté", 55, "center", True),
             ("ca", "CA", 110, "e", True)], height=6)
-        self.tab_rap_cat.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_rc, self.tab_rap_cat)
 
         c3 = Carte(droite, "Par mode de paiement")
         c3.pack(fill=tk.BOTH, expand=True, pady=(6, 0))
-        self.tab_rap_paiement = TableauTriable(c3.corps, [
+        f_tree_rpay = tk.Frame(c3.corps, bg=COULEURS["card"])
+        f_tree_rpay.pack(fill=tk.BOTH, expand=True)
+        self.tab_rap_paiement = TableauTriable(f_tree_rpay, [
             ("mode", "Mode", 150, "w", False),
             ("nb", "Nb", 55, "center", True),
             ("ca", "Montant", 110, "e", True)], height=6)
-        self.tab_rap_paiement.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_rpay, self.tab_rap_paiement)
 
         self._calculer_rapport()
 
@@ -117,14 +123,16 @@ class RapportsMixin:
 
         c1 = Carte(page, "Valorisation par catégorie")
         c1.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
-        t1 = TableauTriable(c1.corps, [
+        f_tree_t1 = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_t1.pack(fill=tk.BOTH, expand=True)
+        t1 = TableauTriable(f_tree_t1, [
             ("cat", "Catégorie", 200, "w", False),
             ("nb", "Produits", 90, "center", True),
             ("qte", "Quantité", 90, "center", True),
             ("achat", "Valeur d'achat", 140, "e", True),
             ("vente", "Valeur de revente", 150, "e", True),
             ("marge", "Marge potentielle", 150, "e", True)], height=9)
-        t1.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_t1, t1)
         totaux = [0, 0, 0]
         for i, c in enumerate(rapport["par_categorie"]):
             marge = c["valeur_vente"] - c["valeur_achat"]
@@ -140,13 +148,15 @@ class RapportsMixin:
 
         c2 = Carte(page, "🐌 Stock dormant (aucune sortie récente)")
         c2.pack(fill=tk.BOTH, expand=True)
-        t2 = TableauTriable(c2.corps, [
+        f_tree_t2 = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_t2.pack(fill=tk.BOTH, expand=True)
+        t2 = TableauTriable(f_tree_t2, [
             ("ref", "Référence", 110, "w", False),
             ("nom", "Produit", 260, "w", False),
             ("stock", "Stock", 70, "center", True),
             ("valeur", "Capital immobilisé", 150, "e", True),
             ("derniere", "Dernière sortie", 150, "w", False)], height=8)
-        t2.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_t2, t2)
         for i, d in enumerate(rapport["dormants"]):
             t2.insert("", tk.END, tags=zebre(i), values=(
                 d["reference"], d["nom"], d["stock"],
@@ -184,30 +194,30 @@ class RapportsMixin:
 
         c1 = Carte(conteneur, "Ventes")
         c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
-        self.tab_ventes = TableauTriable(c1.corps, [
-            ("num", "N° facture", 130, "w", False),
+        f_tree_c1 = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_c1.pack(fill=tk.BOTH, expand=True)
+        self.tab_ventes = TableauTriable(f_tree_c1, [
+            ("num", "N° Facture", 120, "w", False),
             ("date", "Date", 130, "w", False),
-            ("client", "Client", 160, "w", False),
-            ("nb", "Lignes", 60, "center", True),
-            ("remise", "Remise", 90, "e", True),
-            ("total", "Total", 110, "e", True),
-            ("mode", "Paiement", 110, "w", False),
+            ("client", "Client", 140, "w", False),
+            ("montant", "Total", 100, "e", True),
+            ("mode", "Mode", 80, "w", False),
             ("vendeur", "Vendeur", 100, "w", False),
             ("statut", "Statut", 85, "center", False)], height=18)
-        self.tab_ventes.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c1, self.tab_ventes)
         self.tab_ventes.bind("<<TreeviewSelect>>", lambda e: self._charger_lignes_vente())
         self.tab_ventes.bind("<Double-1>", lambda e: self._imprimer_selection(self.tab_ventes, True))
 
         c2 = Carte(conteneur, "Détail de la vente")
-        c2.pack(side=tk.LEFT, fill=tk.BOTH, padx=(6, 0))
-        c2.configure(width=380)
-        c2.pack_propagate(False)
-        self.tab_lignes_vente = TableauTriable(c2.corps, [
+        c2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
+        f_tree_c2 = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_c2.pack(fill=tk.BOTH, expand=True)
+        self.tab_lignes_vente = TableauTriable(f_tree_c2, [
             ("ref", "Réf.", 90, "w", False),
             ("nom", "Article", 160, "w", False),
             ("qte", "Qté", 50, "center", True),
             ("total", "Total", 90, "e", True)], height=18)
-        self.tab_lignes_vente.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c2, self.tab_lignes_vente)
         self.lbl_detail_vente = tk.Label(c2.corps, text="Sélectionnez une vente",
                                          font=(POLICE, 9), bg=COULEURS["card"],
                                          fg=COULEURS["text_secondary"], justify="left")

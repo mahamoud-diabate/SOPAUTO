@@ -2,22 +2,39 @@
 SODIPAC — Gestion Pièce Auto
 Point d'entrée de l'application.
 """
+import os
+
+# DPI awareness pour Windows - texte net (DOIT être avant tkinter import)
+try:
+    from ctypes import windll
+    windll.shcore.SetProcessDpiAwareness(1)  # 1 = Per-Monitor DPI Aware
+except Exception:
+    try:
+        windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
+
 import tkinter as tk
+import customtkinter as ctk
 import database as db
 from core import Application
 from dialogues import DialogueConnexion
 from ui_widgets import centrer_fenetre
 
+ctk.set_appearance_mode("System")
+ctk.set_default_color_theme("blue")
+
 
 def lancer():
     """Connexion puis application."""
+    print("Demarrage de SODIPAC...")
     db.init_database()
     root = tk.Tk()
-    root.withdraw()
 
     # Écran de connexion
     connexion = DialogueConnexion(root)
     root.deiconify()
+    root.focus_force()
     root.mainloop()  # Sort quand l'utilisateur se connecte (root.quit())
     
     utilisateur = connexion.utilisateur

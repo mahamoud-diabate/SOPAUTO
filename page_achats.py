@@ -5,7 +5,8 @@ from datetime import datetime
 import database as db
 import metier_v3 as m3
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte,
-                        TableauTriable, fmt_date, fmt_money, zebre)
+                        TableauTriable, fmt_date, fmt_money, zebre,
+                        ajouter_scrollbars)
 from dialogues import (DemanderMontant, DialogueCommande, DialogueReception)
 
 class AchatsMixin:
@@ -49,7 +50,9 @@ class AchatsMixin:
 
         c1 = Carte(conteneur, "Commandes")
         c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
-        self.tab_commandes = TableauTriable(c1.corps, [
+        f_tree_c1 = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_c1.pack(fill=tk.BOTH, expand=True)
+        self.tab_commandes = TableauTriable(f_tree_c1, [
             ("num", "N° commande", 130, "w", False),
             ("fourn", "Fournisseur", 170, "w", False),
             ("date", "Date", 100, "w", False),
@@ -59,20 +62,20 @@ class AchatsMixin:
             ("total", "Total", 105, "e", True),
             ("reste", "À recevoir", 85, "center", True),
             ("statut", "Statut", 95, "center", False)], height=15)
-        self.tab_commandes.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c1, self.tab_commandes)
         self.tab_commandes.bind("<<TreeviewSelect>>", lambda e: self._charger_cmd_lignes())
 
         c2 = Carte(conteneur, "Détail de la commande")
-        c2.pack(side=tk.LEFT, fill=tk.BOTH, padx=(6, 0))
-        c2.configure(width=420)
-        c2.pack_propagate(False)
-        self.tab_cmd_lignes = TableauTriable(c2.corps, [
+        c2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
+        f_tree_c2 = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_c2.pack(fill=tk.BOTH, expand=True)
+        self.tab_cmd_lignes = TableauTriable(f_tree_c2, [
             ("ref", "Réf.", 90, "w", False),
             ("nom", "Article", 150, "w", False),
             ("cmd", "Cmdé", 50, "center", True),
             ("recu", "Reçu", 50, "center", True),
             ("pu", "P.U.", 80, "e", True)], height=15)
-        self.tab_cmd_lignes.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c2, self.tab_cmd_lignes)
         self.lbl_cmd_detail = tk.Label(c2.corps, text="Sélectionnez une commande",
                                        font=(POLICE, 9), bg=COULEURS["card"],
                                        fg=COULEURS["text_secondary"], justify="left")

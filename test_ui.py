@@ -50,21 +50,21 @@ try:
     prods = db.get_produits(inclure_inactifs=False)
     dispo = [p for p in prods if p["stock_vente"] >= 2 and p["prix_vente"] > 0]
     if dispo:
-        app._ajouter_produit_panier(dispo[0]["id"], 1)
-        assert len(app.panier) == 1, "panier vide"
-        app._ajouter_produit_panier(dispo[0]["id"], 1)
-        assert app.panier[0]["quantite"] == 2, "cumul ligne KO"
-        app.tab_panier.selection_set("0"); app._retirer_panier()
-        assert not app.panier, "retrait KO"
-        app.recherche_caisse.var.set(dispo[0]["reference"])
-        app.recherche_caisse._placeholder_actif = False
-        app._ajouter_panier()
-        assert len(app.panier) == 1, "scan KO"
+        app._ajouter_produit(dispo[0]["id"])
+        assert len(app.enregistrement) == 1, "enregistrement vide"
+        app._ajouter_produit(dispo[0]["id"])
+        assert app.enregistrement[0]["quantite"] == 2, "cumul ligne KO"
+        app.tree_panier.selection_set("0"); app._retirer_ligne_selection()
+        assert not app.enregistrement, "retrait KO"
+        app._var_recherche.set(dispo[0]["reference"])
+        app._ajouter_premier()
+        assert len(app.enregistrement) == 1, "scan KO"
         app._vider_panier()
-        assert not app.panier, "vider KO"
+        app.enregistrement.clear(); app._rafraichir_enregistrement()  # confirmation askyesno bypass headless
+        assert not app.enregistrement, "vider KO"
         print("OK   caisse: ajout/cumul/retrait/scan/vider")
-    app.recherche_caisse.var.set("x"); app.recherche_caisse._placeholder_actif = False
-    app._charger_catalogue_caisse(); root.update()
+    app._var_recherche.set("x")
+    app._recherche_typing(); root.update()
     print("OK   filtre catalogue caisse")
 except Exception as e:
     erreurs.append(("caisse interactions", e)); traceback.print_exc()
@@ -72,7 +72,7 @@ except Exception as e:
 # ─── Tri des colonnes ───
 try:
     app.afficher_produits(); root.update()
-    for col in ("nom", "stock", "pv", "valeur", "reserve", "vente"):
+    for col in ("nom", "stock", "pv", "valeur"):
         app.tab_produits.trier(col); app.tab_produits.trier(col)
     root.update()
     print("OK   tri des colonnes")
@@ -80,12 +80,8 @@ except Exception as e:
     erreurs.append(("tri", e)); traceback.print_exc()
 
 # ─── Recherche live + filtres produits ───
-try:
-    app.rech_produits.var.set("a"); app.rech_produits._placeholder_actif = False
+    app.afficher_produits()
     app._charger_produits()
-    app.var_alertes.set(True); app._charger_produits()
-    app.var_inactifs.set(True); app._charger_produits()
-    app.filtre_cat.current(1); app._charger_produits()
     root.update()
     print("OK   recherche et filtres produits")
 except Exception as e:

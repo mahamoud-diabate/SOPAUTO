@@ -9,6 +9,17 @@ import tkinter as tk
 from tkinter import messagebox
 from datetime import datetime
 
+# DPI awareness pour Windows - texte net
+try:
+    from ctypes import windll
+    windll.shcore.SetProcessDpiAwareness(1)  # 1 = Per-Monitor DPI Aware
+except Exception:
+    try:
+        windll.user32.SetProcessDPIAware()
+    except Exception:
+        # DPI awareness non supporté, on continue sans
+        pass
+
 import database as db
 from pages_analyse import PageAnalyse
 from ui_widgets import (COULEURS, POLICE, Bouton, appliquer_theme,
@@ -75,8 +86,27 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
                    f"[{utilisateur['nom_utilisateur']} · {self.role}]")
         root.geometry("1400x820")
         root.minsize(1100, 680)
+        try:
+            root.state("zoomed")
+        except Exception:
+            # Mode zoomé non pris en charge sur toutes les plateformes OS
+            self._mode_zoome_erreur = True
         root.configure(bg=COULEURS["bg"])
         appliquer_theme(root)
+
+        # Écouteur de redimensionnement dynamique de la fenêtre
+        self._dernier_facteur = 1.0
+
+        def _sur_redim_fenetre(event):
+            if event.widget == self.root:
+                w, h = event.width, event.height
+                if w > 200 and h > 200:
+                    facteur = max(0.85, min(1.25, min(w / 1366.0, h / 768.0)))
+                    if abs(facteur - self._dernier_facteur) > 0.08:
+                        self._dernier_facteur = facteur
+                        appliquer_theme(self.root, factor=facteur)
+
+        root.bind("<Configure>", _sur_redim_fenetre, add="+")
 
         self.page_courante = None
         self._apres_planifies = set()
@@ -87,10 +117,10 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
             self.afficher_caisse()
         else:
             self.afficher_dashboard()
-        centrer_fenetre(root, 1400, 820)
         root.protocol("WM_DELETE_WINDOW", self.quitter)
         root.bind("<Destroy>", self._sur_destruction, add="+")
         self._tic_horloge()
+        self._planifier(3600000, self._sauvegarde_auto_horaire)
 
 
     def _planifier(self, delai, fonction):
@@ -101,19 +131,21 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
 
 
     def _sur_destruction(self, event=None):
-        """Annule tous les callbacks en attente quand la fenêtre est fermée."""
-        if event is not None and event.widget is not self.root:
-            return
-        for identifiant in list(self._apres_planifies):
+            """Annule tous les callbacks en attente quand la fenêtre est fermée."""
+            if event is not None and event.widget is not self.root:
+                return
+            for identifiant in list(self._apres_planifies):
+                try:
+                    self.root.after_cancel(identifiant)
+                except (tk.TclError, ValueError):
+                    pass
+            self._apres_planifies.clear()
             try:
-                self.root.after_cancel(identifiant)
-            except (tk.TclError, ValueError):
-                pass
-        self._apres_planifies.clear()
-        try:
-            db.close_connection()
-        except Exception:
-            pass
+                db.close_connection()
+            except Exception:
+                # Log pour diagnostic sans bloquer la fermeture
+                import traceback
+                traceback.print_exc()
 
     # ── permissions ──
 
@@ -158,59 +190,89 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
 
 
     def _construire_menu_lateral(self, parent):
-        barre = tk.Frame(parent, bg=COULEURS["sidebar"], width=240)
+        barre = tk.Frame(parent, bg=COULEURS["sidebar"], width=248)
         barre.pack(side=tk.LEFT, fill=tk.Y)
         barre.pack_propagate(False)
 
-        # Logo + nom entreprise
-        logo = tk.Frame(barre, bg=COULEURS["sidebar"])
-        logo.pack(fill=tk.X, pady=(18, 6))
-        lbl_icone = tk.Label(logo, text="🚗", font=(POLICE, 30),
-                             bg=COULEURS["sidebar"], fg="#60a5fa")
-        lbl_icone.pack()
-        tk.Label(logo, text=self.params.get("entreprise_nom", "SODIPAC"),
-                 font=(POLICE, 16, "bold"), bg=COULEURS["sidebar"],
-                 fg="white").pack()
-        tk.Label(logo, text="Gestion Pièce Auto", font=(POLICE, 8),
-                 bg=COULEURS["sidebar"],
-                 fg=COULEURS["sidebar_text"]).pack(pady=(1, 0))
+        # ── Logo ──────────────────────────────────────────
+        logo_frame = tk.Frame(barre, bg=COULEURS["sidebar"])
+        logo_frame.pack(fill=tk.X, pady=(20, 0))
 
-        # ── Pied de page (ancré AVANT la zone défilante pour rester visible) ──
+        # Icône dans un badge coloré
+        badge = tk.Frame(logo_frame, bg="#6366f1", width=52, height=52)
+        badge.pack()
+        badge.pack_propagate(False)
+        tk.Label(badge, text="🚗", font=(POLICE, 22),
+                 bg="#6366f1", fg="white").place(relx=.5, rely=.5, anchor="center")
+
+        tk.Label(logo_frame,
+                 text=self.params.get("entreprise_nom", "SODIPAC"),
+                 font=(POLICE, 15, "bold"), bg=COULEURS["sidebar"],
+                 fg="white").pack(pady=(8, 0))
+        tk.Label(logo_frame, text="Gestion Pièce Auto", font=(POLICE, 8),
+                 bg=COULEURS["sidebar"],
+                 fg=COULEURS["sidebar_accent"]).pack(pady=(1, 10))
+
+        # Séparateur lumineux
+        sep_grad = tk.Frame(barre, bg="#6366f1", height=2)
+        sep_grad.pack(fill=tk.X, padx=24, pady=(0, 6))
+
+        # ── Pied ancré en bas AVANT la zone scrollable ──
         pied = tk.Frame(barre, bg=COULEURS["sidebar"])
-        pied.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
+        pied.pack(side=tk.BOTTOM, fill=tk.X)
 
-        tk.Frame(pied, bg=COULEURS["sidebar_sep"], height=1).pack(fill=tk.X, padx=18, pady=(0, 8))
-        info_user = tk.Frame(pied, bg=COULEURS["sidebar"])
-        info_user.pack(fill=tk.X, padx=18)
-        tk.Label(info_user,
-                 text=f"👤 {self.utilisateur.get('nom_complet') or self.utilisateur['nom_utilisateur']}",
-                 font=(POLICE, 10, "bold"), bg=COULEURS["sidebar"],
+        tk.Frame(pied, bg=COULEURS["sidebar_sep"], height=1).pack(
+            fill=tk.X, padx=16, pady=(0, 10))
+
+        # Carte utilisateur
+        user_card = tk.Frame(pied, bg=COULEURS["sidebar_hover"],
+                             padx=10, pady=8)
+        user_card.pack(fill=tk.X, padx=12, pady=(0, 8))
+
+        role_colors = {"superviseur": "#818cf8", "gerant": "#34d399",
+                       "vendeur": "#fbbf24", "administrateur": "#f472b6"}
+        role_color = role_colors.get(self.role, "#94a3b8")
+
+        # Avatar initiale
+        nom_affiche = (self.utilisateur.get("nom_complet")
+                       or self.utilisateur["nom_utilisateur"])
+        initiale = nom_affiche[0].upper() if nom_affiche else "?"
+
+        avatar = tk.Frame(user_card, bg=role_color, width=32, height=32)
+        avatar.pack(side=tk.LEFT, padx=(0, 8))
+        avatar.pack_propagate(False)
+        tk.Label(avatar, text=initiale, font=(POLICE, 11, "bold"),
+                 bg=role_color, fg="white").place(relx=.5, rely=.5,
+                                                   anchor="center")
+
+        texte_frame = tk.Frame(user_card, bg=COULEURS["sidebar_hover"])
+        texte_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        tk.Label(texte_frame, text=nom_affiche,
+                 font=(POLICE, 9, "bold"), bg=COULEURS["sidebar_hover"],
                  fg="white", anchor="w").pack(fill=tk.X)
-        role_colors = {"superviseur": "#60a5fa", "gerant": "#34d399",
-                       "vendeur": "#fbbf24"}
-        tk.Label(info_user, text=self.role.capitalize(), font=(POLICE, 8),
-                 bg=COULEURS["sidebar"],
-                 fg=role_colors.get(self.role, COULEURS["sidebar_text"]),
-                 anchor="w").pack(fill=tk.X)
-        Bouton(pied, "Changer d'utilisateur", "secondary",
-               self.deconnexion, petit=True, outline=True).pack(
-                   fill=tk.X, padx=18, pady=(8, 0))
+        tk.Label(texte_frame, text=self.role.capitalize(),
+                 font=(POLICE, 8), bg=COULEURS["sidebar_hover"],
+                 fg=role_color, anchor="w").pack(fill=tk.X)
 
-        # ── Zone de navigation défilante ──
-        # 18 entrées ne tiennent pas sur un écran de portable : on rend la
-        # navigation scrollable pour ne jamais masquer une rubrique.
+        Bouton(pied, "⇄  Changer d'utilisateur", "secondary",
+               self.deconnexion, petit=True, outline=True).pack(
+                   fill=tk.X, padx=12, pady=(0, 10))
+
+        # ── Zone de navigation scrollable ──
         zone = tk.Frame(barre, bg=COULEURS["sidebar"])
         zone.pack(fill=tk.BOTH, expand=True)
-        nav_canvas = tk.Canvas(zone, bg=COULEURS["sidebar"], highlightthickness=0,
-                               bd=0, width=232)
+
+        nav_canvas = tk.Canvas(zone, bg=COULEURS["sidebar"],
+                               highlightthickness=0, bd=0)
         nav_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
         nav = tk.Frame(nav_canvas, bg=COULEURS["sidebar"])
-        fenetre = nav_canvas.create_window((0, 0), window=nav, anchor="nw", width=232)
+        fenetre = nav_canvas.create_window((0, 0), window=nav,
+                                           anchor="nw", width=248)
 
         def _maj_region(_e=None):
             try:
                 nav_canvas.configure(scrollregion=nav_canvas.bbox("all"))
-                # Barre de défilement affichée seulement si nécessaire
                 besoin = nav.winfo_reqheight() > nav_canvas.winfo_height()
                 if besoin and not vsb.winfo_ismapped():
                     vsb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -220,9 +282,10 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
                 pass
 
         vsb = tk.Scrollbar(zone, orient="vertical", command=nav_canvas.yview,
-                           width=8, bg=COULEURS["sidebar"],
+                           width=5, bg=COULEURS["sidebar"],
                            troughcolor=COULEURS["sidebar"], bd=0,
-                           highlightthickness=0, activebackground=COULEURS["secondary"])
+                           highlightthickness=0,
+                           activebackground="#6366f1")
         nav_canvas.configure(yscrollcommand=vsb.set)
         nav.bind("<Configure>", _maj_region)
         nav_canvas.bind("<Configure>",
@@ -231,60 +294,91 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
 
         def _molette(event):
             try:
-                if nav_canvas.winfo_exists() and nav.winfo_reqheight() > nav_canvas.winfo_height():
+                if (nav_canvas.winfo_exists() and
+                        nav.winfo_reqheight() > nav_canvas.winfo_height()):
                     nav_canvas.yview_scroll(-1 * (event.delta // 120), "units")
             except tk.TclError:
                 pass
 
-        nav_canvas.bind("<Enter>", lambda e: nav_canvas.bind_all("<MouseWheel>", _molette))
-        nav_canvas.bind("<Leave>", lambda e: nav_canvas.unbind_all("<MouseWheel>"))
+        nav_canvas.bind("<Enter>",
+                        lambda e: nav_canvas.bind_all("<MouseWheel>", _molette))
+        nav_canvas.bind("<Leave>",
+                        lambda e: nav_canvas.unbind_all("<MouseWheel>"))
 
-        # Séparateur
-        tk.Frame(nav, bg=COULEURS["sidebar_sep"], height=1).pack(
-            fill=tk.X, padx=20, pady=(6, 4))
-        tk.Label(nav, text="MENU", font=(POLICE, 8, "bold"),
+        # Label section
+        tk.Label(nav, text="MENU", font=(POLICE, 7, "bold"),
                  bg=COULEURS["sidebar"],
-                 fg=COULEURS["sidebar_text"]).pack(anchor="w", padx=22, pady=(2, 4))
+                 fg=COULEURS["sidebar_text"],
+                 anchor="w").pack(fill=tk.X, padx=20, pady=(8, 2))
 
         self.entrees_menu = [
-                    ("📊", "Tableau de bord", self.afficher_dashboard, None, "F12"),
-                    ("📝", "Enregistrer vente", self.afficher_caisse, "caisse", "F2"),
-                    ("📦", "Produits", self.afficher_produits, None, "F3"),
-                    ("📋", "Stock", self.afficher_stock, "stock", "F4"),
-                    ("👥", "Clients", self.afficher_clients, None, "F5"),
-                    ("💳", "Créances", self.afficher_creances, "rapports", "F9"),
-                    ("💰", "Analyse", self.afficher_analyse, "rapports", "F10"),
-                ]
+            ("📊", "Tableau de bord", self.afficher_dashboard, None, "F12"),
+            ("📝", "Enregistrer vente", self.afficher_caisse, "caisse", "F2"),
+            ("📦", "Produits", self.afficher_produits, None, "F3"),
+            ("📋", "Stock", self.afficher_stock, "stock", "F4"),
+            ("👥", "Clients", self.afficher_clients, None, "F5"),
+            ("💳", "Créances", self.afficher_creances, "rapports", "F9"),
+            ("💰", "Analyse", self.afficher_analyse, "rapports", "F10"),
+        ]
 
         self.entrees_menu_second = [
-                    ("⚙️", "Paramètres", self.afficher_parametres, "admin", None),
-                ]
+            ("⚙️", "Paramètres", self.afficher_parametres, "admin", None),
+        ]
 
         self.boutons_menu = []
 
         for icone, libelle, action, droit, touche in self.entrees_menu:
             self._ajouter_bouton_menu(nav, icone, libelle, action, droit, touche)
 
-        tk.Frame(nav, bg=COULEURS["sidebar_sep"], height=1).pack(fill=tk.X, padx=20, pady=6)
+        # Séparateur avant section secondaire
+        tk.Frame(nav, bg=COULEURS["sidebar_sep"], height=1).pack(
+            fill=tk.X, padx=20, pady=(8, 4))
+        tk.Label(nav, text="GESTION", font=(POLICE, 7, "bold"),
+                 bg=COULEURS["sidebar"],
+                 fg=COULEURS["sidebar_text"],
+                 anchor="w").pack(fill=tk.X, padx=20, pady=(0, 2))
 
         for icone, libelle, action, droit, touche in self.entrees_menu_second:
             self._ajouter_bouton_menu(nav, icone, libelle, action, droit, touche)
 
-        # ── Bouton "Plus" pour les entrées cachées ──
-        self._btn_plus = tk.Button(
-            nav, text="    ⚙️     Plus ▸",
-            font=(POLICE, 10), bg=COULEURS["sidebar"], fg=COULEURS["sidebar_text"],
-            activebackground=COULEURS["sidebar_hover"], activeforeground="white",
-            bd=0, anchor="w", padx=0, pady=10, highlightthickness=0,
-            cursor="hand2",
-            command=self._basculer_plus)
-        self._btn_plus.pack(fill=tk.X, padx=8)
-        self._btn_plus.bind("<Enter>", lambda e: self._btn_plus.configure(bg=COULEURS["sidebar_hover"]))
-        self._btn_plus.bind("<Leave>", lambda e: self._btn_plus.configure(bg=COULEURS["sidebar"]))
-
-        # Frame caché contenant les entrées supplémentaires
-        self._frame_plus = tk.Frame(nav, bg=COULEURS["sidebar"])
+        # ── Accordéon « Plus » ──
         self._plus_ouvert = False
+
+        plus_header = tk.Frame(nav, bg=COULEURS["sidebar"])
+        plus_header.pack(fill=tk.X, padx=8, pady=(2, 0))
+
+        self._icone_chevron = tk.StringVar(value="▸")
+        self._btn_plus = tk.Button(
+            plus_header,
+            text="  🗂   Plus",
+            font=(POLICE, 10), bg=COULEURS["sidebar"],
+            fg=COULEURS["sidebar_text"],
+            activebackground=COULEURS["sidebar_hover"],
+            activeforeground="white",
+            bd=0, anchor="w", padx=6, pady=9,
+            highlightthickness=0, cursor="hand2",
+            command=self._basculer_plus)
+        self._btn_plus.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self._lbl_chevron = tk.Label(
+            plus_header, text="▸", font=(POLICE, 9),
+            bg=COULEURS["sidebar"], fg=COULEURS["sidebar_text"])
+        self._lbl_chevron.pack(side=tk.RIGHT, padx=(0, 14))
+
+        for w in (self._btn_plus, self._lbl_chevron, plus_header):
+            w.bind("<Enter>", lambda e: (
+                self._btn_plus.configure(bg=COULEURS["sidebar_hover"],
+                                         fg="white"),
+                self._lbl_chevron.configure(bg=COULEURS["sidebar_hover"],
+                                            fg="white")))
+            w.bind("<Leave>", lambda e: (
+                self._btn_plus.configure(bg=COULEURS["sidebar"],
+                                         fg=COULEURS["sidebar_text"]),
+                self._lbl_chevron.configure(bg=COULEURS["sidebar"],
+                                            fg=COULEURS["sidebar_text"])))
+
+        # Frame caché des entrées supplémentaires
+        self._frame_plus = tk.Frame(nav, bg=COULEURS["sidebar"])
 
         entrees_plus = [
             ("💹", "Rapports", self.afficher_rapports, "rapports"),
@@ -299,48 +393,79 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
             ("❓", "Aide", self.afficher_aide, None),
         ]
         for icone, libelle, action, droit in entrees_plus:
-            self._ajouter_bouton_menu(self._frame_plus, icone, libelle, action, droit, None)
+            self._ajouter_bouton_menu(self._frame_plus, icone, libelle,
+                                      action, droit, None)
 
         self._planifier(120, _maj_region)
 
 
     def _basculer_plus(self):
-        """Affiche/masque les entrées supplémentaires."""
+        """Affiche/masque les entrées supplémentaires avec chevron animé."""
         if self._plus_ouvert:
             self._frame_plus.pack_forget()
-            self._btn_plus.configure(text="    ⚙️     Plus ▸")
+            self._lbl_chevron.configure(text="▸")
             self._plus_ouvert = False
         else:
-            self._frame_plus.pack(after=self._btn_plus, fill=tk.X)
-            self._btn_plus.configure(text="    ⚙️     Plus ▾")
+            self._frame_plus.pack(fill=tk.X)
+            self._lbl_chevron.configure(text="▾")
             self._plus_ouvert = True
 
 
     def _ajouter_bouton_menu(self, parent, icone, libelle, action, droit, touche):
         actif = droit is None or self.peut(droit)
-        b = tk.Button(
-            parent, text=f"    {icone}     {libelle}",
-            font=(POLICE, 10),
-            bg=COULEURS["sidebar"],
-            fg="white" if actif else COULEURS["sidebar_disabled"],
-            activebackground=COULEURS["sidebar_hover"],
-            activeforeground="white",
-            bd=0, anchor="w", padx=0, pady=10,
-            highlightthickness=0,
-            cursor="hand2" if actif else "arrow",
-            command=action if actif else self._refus)
-        b.pack(fill=tk.X, padx=8)
-        b._index = len(self.boutons_menu)
+
+        row = tk.Frame(parent, bg=COULEURS["sidebar"], cursor="hand2" if actif else "arrow")
+        row.pack(fill=tk.X, padx=8, pady=1)
+
+        # Indicateur pill vertical (coloré quand actif, transparent sinon)
+        pill = tk.Frame(row, bg=COULEURS["sidebar"], width=3)
+        pill.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 6))
+
+        # Icône dans un mini-cadre
+        icone_lbl = tk.Label(row, text=icone, font=(POLICE, 13),
+                             bg=COULEURS["sidebar"],
+                             fg="white" if actif else COULEURS["sidebar_disabled"],
+                             width=2)
+        icone_lbl.pack(side=tk.LEFT, pady=7)
+
+        texte_lbl = tk.Label(row, text=libelle, font=(POLICE, 10),
+                             bg=COULEURS["sidebar"],
+                             fg="white" if actif else COULEURS["sidebar_disabled"],
+                             anchor="w")
+        texte_lbl.pack(side=tk.LEFT, padx=(6, 0), pady=7, fill=tk.X, expand=True)
+
+        def _entrer(e=None):
+            if row is not getattr(self, "_menu_actif", None):
+                for w in (row, icone_lbl, texte_lbl, pill):
+                    w.configure(bg=COULEURS["sidebar_hover"])
+
+        def _quitter(e=None):
+            if row is not getattr(self, "_menu_actif", None):
+                for w in (row, icone_lbl, texte_lbl, pill):
+                    w.configure(bg=COULEURS["sidebar"])
+
+        def _clic(e=None):
+            if actif:
+                action()
+            else:
+                self._refus()
+
         if actif:
-            b.bind("<Enter>", lambda e, x=b:
-                   x.configure(bg=COULEURS["sidebar_hover"])
-                   if x is not getattr(self, "_menu_actif", None) else None)
-            b.bind("<Leave>", lambda e, x=b:
-                   x.configure(bg=COULEURS["sidebar"])
-                   if x is not getattr(self, "_menu_actif", None) else None)
+            for w in (row, icone_lbl, texte_lbl):
+                w.bind("<Enter>", _entrer)
+                w.bind("<Leave>", _quitter)
+                w.bind("<Button-1>", _clic)
+
+        # Stocker les refs pour pouvoir activer/désactiver
+        row._pill = pill
+        row._icone = icone_lbl
+        row._texte = texte_lbl
+        row._actif = actif
+
         if touche:
-            infobulle(b, f"Raccourci : {touche}")
-        self.boutons_menu.append(b)
+            infobulle(row, f"Raccourci : {touche}")
+
+        self.boutons_menu.append(row)
 
 
     def _construire_entete(self, parent):
@@ -466,23 +591,38 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
         for w in self.zone_actions.winfo_children():
             w.destroy()
         self.lbl_titre.configure(text=titre)
-        for i, b in enumerate(self.boutons_menu):
-            if i == index_menu:
-                b.configure(bg=COULEURS["sidebar_active"], fg="white")
-                self._menu_actif = b
-            elif b.cget("bg") in (COULEURS["primary"], COULEURS["sidebar_active"]):
-                b.configure(bg=COULEURS["sidebar"], fg="white")
+
+        for i, row in enumerate(self.boutons_menu):
+            try:
+                pill = getattr(row, "_pill", None)
+                icone = getattr(row, "_icone", None)
+                texte = getattr(row, "_texte", None)
+                if pill is None:
+                    continue  # entrées non-row (compatibilité)
+                if i == index_menu:
+                    # État actif : fond coloré + pill violet
+                    for w in (row, icone, texte):
+                        w.configure(bg=COULEURS["sidebar_active"])
+                    pill.configure(bg=COULEURS["sidebar_active_pill"])
+                    self._menu_actif = row
+                else:
+                    # État inactif : retour au fond sidebar
+                    for w in (row, icone, texte):
+                        w.configure(bg=COULEURS["sidebar"])
+                    pill.configure(bg=COULEURS["sidebar"])
+            except tk.TclError:
+                pass
+
         self._maj_badge_alertes()
 
 
     def _maj_badge_alertes(self):
         try:
-            nb = db.get_dashboard_stats()["nb_alertes"]
+            nb = db.get_nb_alertes()
         except Exception:
-            traceback.print_exc()
             nb = 0
         try:
-            if self.lbl_alertes.winfo_exists():
+            if hasattr(self, 'lbl_alertes') and self.lbl_alertes.winfo_exists():
                 self.lbl_alertes.configure(
                     text=f"⚠ {nb} alerte(s) de stock" if nb else "✅ Stocks OK",
                     fg=COULEURS["danger"] if nb else COULEURS["success"])
@@ -515,6 +655,15 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
             traceback.print_exc()
         self._sync_cloud()
         self.root.destroy()
+
+    def _sauvegarde_auto_horaire(self):
+        """Sauvegarde automatique en arrière-plan toutes les heures sans déranger l'utilisateur."""
+        try:
+            db.sauvegarder_base()
+            self._sync_cloud()
+        except Exception:
+            self._sauvegarde_auto_erreur = True
+        self._planifier(3600000, self._sauvegarde_auto_horaire)
 
     def _sync_cloud(self):
         """Copie la base vers le dossier partage (OneDrive, reseau...).

@@ -5,7 +5,8 @@ from datetime import datetime
 import database as db
 import metier_v3 as m3
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte,
-                        TableauTriable, fmt_date, fmt_money, zebre)
+                        TableauTriable, fmt_date, fmt_money, zebre,
+                        ajouter_scrollbars)
 from dialogues import DialogueRetour
 
 class RetoursMixin:
@@ -30,7 +31,9 @@ class RetoursMixin:
 
         c1 = Carte(conteneur, "Retours enregistrés")
         c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
-        self.tab_retours = TableauTriable(c1.corps, [
+        f_tree_c1 = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_c1.pack(fill=tk.BOTH, expand=True)
+        self.tab_retours = TableauTriable(f_tree_c1, [
             ("num", "N° retour", 125, "w", False),
             ("date", "Date", 130, "w", False),
             ("vente", "Vente d'origine", 130, "w", False),
@@ -39,20 +42,20 @@ class RetoursMixin:
             ("nb", "Lignes", 55, "center", True),
             ("total", "Montant", 105, "e", True),
             ("mode", "Remboursement", 120, "w", False)], height=16)
-        self.tab_retours.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c1, self.tab_retours)
         self.tab_retours.bind("<<TreeviewSelect>>", lambda e: self._charger_retour_lignes())
 
         c2 = Carte(conteneur, "Détail du retour")
-        c2.pack(side=tk.LEFT, fill=tk.BOTH, padx=(6, 0))
-        c2.configure(width=400)
-        c2.pack_propagate(False)
-        self.tab_retour_lignes = TableauTriable(c2.corps, [
+        c2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
+        f_tree_c2 = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_c2.pack(fill=tk.BOTH, expand=True)
+        self.tab_retour_lignes = TableauTriable(f_tree_c2, [
             ("ref", "Réf.", 90, "w", False),
             ("nom", "Article", 145, "w", False),
             ("qte", "Qté", 45, "center", True),
             ("total", "Total", 85, "e", True),
             ("stock", "En stock", 70, "center", False)], height=16)
-        self.tab_retour_lignes.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c2, self.tab_retour_lignes)
         self.lbl_retour_info = tk.Label(c2.corps, text="Sélectionnez un retour",
                                         font=(POLICE, 9), bg=COULEURS["card"],
                                         fg=COULEURS["text_secondary"], justify="left")

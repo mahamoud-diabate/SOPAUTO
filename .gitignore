@@ -1,41 +1,35 @@
-# Base de données (contient des vraies données, jamais dans git)
-*.db
-*.db-wal
-*.db-shm
-*.db.backup-*
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Build et distribution
+# Distribution / packaging
 dist/
-build_temp/
 build/
 *.spec
 
-# Environnement Python
-__pycache__/
-*.pyc
-*.pyo
+# SQLite WAL temporaire
+*.db-shm
+*.db-wal
+
+# Fichiers de test et dev
+test_*.py
+test_*.db
+audit_*.py
+seed_*.py
+reset_database_clean.py
+analyse_prix.py
+*_screenshot.png
+capture_*.png
+sauvegardes_test*/
+
+# Outils de dev
+.pytest_cache/
 .venv/
 venv/
-
-# Fichiers temporaires
-_splice*.py
-_refactor.py
-_add_*.py
-_clean_db.py
-_fix_*.py
-_cap.py
-*.log
-
-# Captures d'écran
-_capture_*.png
-
-# Dossiers créés par l'appli
-sauvegardes/
-exports/
-factures/
-rapports/
+RAPPORT_COMPLET_SODIPAC.md
+DEVELOPER.md
 
 # IDE
 .vscode/
 .idea/
-*.db.*

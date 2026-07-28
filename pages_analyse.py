@@ -19,6 +19,7 @@ from tkinter import messagebox, ttk
 
 import analyse_prix as ap
 import database as db
+from dialogues import DialogueHistoriquePrix, DialoguePrixConseille
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte, TableauTriable,
                         ajouter_scrollbars, fmt_date, fmt_money, zebre)
 
@@ -551,7 +552,9 @@ class PageAnalyse:
 
         c1 = Carte(conteneur, "Par vendeur — qui tient les prix ?")
         c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
-        self.tab_nego_vendeur = TableauTriable(c1.corps, [
+        f_tree_nv = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_nv.pack(fill=tk.BOTH, expand=True)
+        self.tab_nego_vendeur = TableauTriable(f_tree_nv, [
             ("vendeur", "Vendeur", 135, "w", False),
             ("tend", "Tendance", 100, "center", False),
             ("nb", "Lignes", 60, "center", True),
@@ -561,11 +564,13 @@ class PageAnalyse:
             ("impact", "Impact", 105, "e", True),
             ("taux", "% remisé", 80, "center", True),
             ("marge", "Marge %", 75, "center", True)], height=15)
-        self.tab_nego_vendeur.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_nv, self.tab_nego_vendeur)
 
         c2 = Carte(conteneur, "Par client — qui obtient les meilleurs prix ?")
         c2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
-        self.tab_nego_client = TableauTriable(c2.corps, [
+        f_tree_nc = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_nc.pack(fill=tk.BOTH, expand=True)
+        self.tab_nego_client = TableauTriable(f_tree_nc, [
             ("client", "Client", 155, "w", False),
             ("type", "Type", 90, "w", False),
             ("tend", "Tendance", 100, "center", False),
@@ -574,7 +579,7 @@ class PageAnalyse:
             ("remise", "Remise moy.", 100, "center", True),
             ("impact", "Impact", 105, "e", True),
             ("marge", "Marge %", 75, "center", True)], height=15)
-        self.tab_nego_client.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_nc, self.tab_nego_client)
 
         self.lbl_nego_info = tk.Label(page, text="", font=(POLICE, 9),
                                       bg=COULEURS["bg"],

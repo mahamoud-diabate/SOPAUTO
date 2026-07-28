@@ -9,7 +9,7 @@ import database as db
 import factures
 from dialogues import DialogueUtilisateur
 from ui_widgets import (COULEURS, POLICE, Bouton, TableauTriable,
-                        fmt_date, zebre)
+                        fmt_date, zebre, ajouter_scrollbars)
 
 
 class ParametresMixin:
@@ -71,14 +71,16 @@ class ParametresMixin:
         Bouton(barre, "🗑️ Supprimer", "danger", self._supprimer_utilisateur,
                petit=True).pack(side=tk.LEFT, padx=3)
 
-        self.tab_utilisateurs = TableauTriable(page2, [
+        f_tree_util = tk.Frame(page2, bg=COULEURS["bg"])
+        f_tree_util.pack(fill=tk.BOTH, expand=True)
+        self.tab_utilisateurs = TableauTriable(f_tree_util, [
             ("login", "Identifiant", 150, "w", False),
             ("nom", "Nom complet", 200, "w", False),
             ("role", "Rôle", 140, "w", False),
             ("actif", "Actif", 70, "center", False),
             ("cree", "Créé le", 140, "w", False),
             ("acces", "Dernier accès", 150, "w", False)], height=12)
-        self.tab_utilisateurs.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_util, self.tab_utilisateurs)
         self.tab_utilisateurs.bind("<Double-1>", lambda e: self._modifier_utilisateur())
         self._charger_utilisateurs()
 
@@ -103,11 +105,13 @@ class ParametresMixin:
         self._lbl_dossier_sauvegardes = lbl_dossier
         self._maj_label_dossier()
 
-        self.tab_sauvegardes = TableauTriable(page3, [
+        f_tree_sauv = tk.Frame(page3, bg=COULEURS["bg"])
+        f_tree_sauv.pack(fill=tk.BOTH, expand=True)
+        self.tab_sauvegardes = TableauTriable(f_tree_sauv, [
             ("nom", "Fichier", 340, "w", False),
             ("date", "Date", 170, "w", False),
             ("taille", "Taille", 110, "e", True)], height=12)
-        self.tab_sauvegardes.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_sauv, self.tab_sauvegardes)
         tk.Label(page3, text="⚠ La restauration remplace toutes les données actuelles. "
                              "Une sauvegarde de sécurité est créée automatiquement avant.",
                  font=(POLICE, 9), bg=COULEURS["bg"], fg=COULEURS["danger"]).pack(anchor="w", pady=8)
@@ -116,12 +120,14 @@ class ParametresMixin:
         # ── Journal ──
         page4 = tk.Frame(onglets, bg=COULEURS["bg"], padx=12, pady=12)
         onglets.add(page4, text="  📜 Journal d'activité  ")
-        t = TableauTriable(page4, [
+        f_tree_journal = tk.Frame(page4, bg=COULEURS["bg"])
+        f_tree_journal.pack(fill=tk.BOTH, expand=True)
+        t = TableauTriable(f_tree_journal, [
             ("date", "Date", 160, "w", False),
             ("user", "Utilisateur", 140, "w", False),
             ("action", "Action", 220, "w", False),
             ("details", "Détails", 420, "w", False)], height=18)
-        t.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_journal, t)
         for i, j in enumerate(db.get_journal(400)):
             t.insert("", tk.END, tags=zebre(i), values=(
                 fmt_date(j["date_action"]), j["utilisateur"], j["action"], j["details"]))

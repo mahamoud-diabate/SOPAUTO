@@ -5,7 +5,8 @@ from datetime import datetime
 import database as db
 import metier_v3 as m3
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte,
-                        TableauTriable, fmt_date, fmt_money, zebre)
+                        TableauTriable, fmt_date, fmt_money, zebre,
+                        ajouter_scrollbars)
 from dialogues import (DialogueOuvrirInventaire, DialogueComptage)
 
 class InventaireMixin:
@@ -33,10 +34,10 @@ class InventaireMixin:
         conteneur.pack(fill=tk.BOTH, expand=True)
 
         c1 = Carte(conteneur, "Inventaires")
-        c1.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 6))
-        c1.configure(width=470)
-        c1.pack_propagate(False)
-        self.tab_inventaires = TableauTriable(c1.corps, [
+        c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
+        f_tree_c1 = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_c1.pack(fill=tk.BOTH, expand=True)
+        self.tab_inventaires = TableauTriable(f_tree_c1, [
             ("num", "N°", 120, "w", False),
             ("depot", "Dépôt", 105, "w", False),
             ("debut", "Ouvert le", 100, "w", False),
@@ -44,7 +45,7 @@ class InventaireMixin:
             ("ecarts", "Écarts", 55, "center", True),
             ("valeur", "Impact", 100, "e", True),
             ("statut", "Statut", 85, "center", False)], height=16)
-        self.tab_inventaires.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c1, self.tab_inventaires)
         self.tab_inventaires.bind("<<TreeviewSelect>>", lambda e: self._charger_inv_lignes())
 
         c2 = Carte(conteneur, "Lignes de comptage")
@@ -60,7 +61,9 @@ class InventaireMixin:
                                        bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_inv_resume.pack(side=tk.RIGHT)
 
-        self.tab_inv_lignes = TableauTriable(c2.corps, [
+        f_tree_c2 = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_c2.pack(fill=tk.BOTH, expand=True)
+        self.tab_inv_lignes = TableauTriable(f_tree_c2, [
             ("ref", "Réf.", 95, "w", False),
             ("nom", "Produit", 190, "w", False),
             ("theo", "Théorique", 75, "center", True),
@@ -68,7 +71,7 @@ class InventaireMixin:
             ("ecart", "Écart", 60, "center", True),
             ("valeur", "Valeur écart", 105, "e", True),
             ("motif", "Motif", 105, "w", False)], height=15)
-        self.tab_inv_lignes.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c2, self.tab_inv_lignes)
         self.tab_inv_lignes.bind("<Double-1>", lambda e: self._saisir_comptage())
 
         tk.Label(c2.corps, text="Double-cliquez sur une ligne pour saisir la quantité comptée.",

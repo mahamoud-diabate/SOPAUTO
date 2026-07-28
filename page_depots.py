@@ -6,7 +6,7 @@ import database as db
 import metier_v3 as m3
 from ui_widgets import (COULEURS, POLICE, Bouton, Carte,
                         TableauTriable, fmt_date, fmt_money, zebre,
-                        EntreeRecherche)
+                        EntreeRecherche, ajouter_scrollbars)
 from dialogues import (DialogueDepot, DialogueTransfert)
 
 class DepotsMixin:
@@ -32,17 +32,17 @@ class DepotsMixin:
         conteneur.pack(fill=tk.BOTH, expand=True)
 
         c1 = Carte(conteneur, "Dépôts")
-        c1.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 6))
-        c1.configure(width=520)
-        c1.pack_propagate(False)
-        self.tab_depots = TableauTriable(c1.corps, [
+        c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
+        f_tree_c1 = tk.Frame(c1.corps, bg=COULEURS["card"])
+        f_tree_c1.pack(fill=tk.BOTH, expand=True)
+        self.tab_depots = TableauTriable(f_tree_c1, [
             ("code", "Code", 65, "center", False),
             ("nom", "Nom", 165, "w", False),
             ("type", "Type", 90, "w", False),
             ("vente", "Vente", 60, "center", False),
             ("articles", "Articles", 70, "center", True),
             ("valeur", "Valeur stock", 110, "e", True)], height=16)
-        self.tab_depots.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c1, self.tab_depots)
         self.tab_depots.bind("<Double-1>", lambda e: self._modifier_depot())
         self.tab_depots.bind("<<TreeviewSelect>>", lambda e: self._charger_depot_contenu())
 
@@ -51,7 +51,9 @@ class DepotsMixin:
         self.rech_depot = EntreeRecherche(c2.corps, "Filtrer les articles…", 30,
                                           callback=self._charger_depot_contenu)
         self.rech_depot.pack(anchor="w", pady=(0, 6))
-        self.tab_depot_contenu = TableauTriable(c2.corps, [
+        f_tree_c2 = tk.Frame(c2.corps, bg=COULEURS["card"])
+        f_tree_c2.pack(fill=tk.BOTH, expand=True)
+        self.tab_depot_contenu = TableauTriable(f_tree_c2, [
             ("ref", "Référence", 110, "w", False),
             ("nom", "Produit", 220, "w", False),
             ("qte", "Quantité", 75, "center", True),
@@ -59,7 +61,7 @@ class DepotsMixin:
             ("cump", "CUMP", 95, "e", True),
             ("valeur", "Valeur", 105, "e", True),
             ("empl", "Emplacement", 130, "w", False)], height=15)
-        self.tab_depot_contenu.pack(fill=tk.BOTH, expand=True)
+        ajouter_scrollbars(f_tree_c2, self.tab_depot_contenu)
         self.lbl_depot_resume = tk.Label(c2.corps, text="", font=(POLICE, 9, "bold"),
                                          bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_depot_resume.pack(anchor="w", pady=(6, 0))

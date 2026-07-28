@@ -22,24 +22,24 @@ conn = db.get_connection()
 conn.execute("DELETE FROM produits")  # aucun produit id=1 (le probe FK échouerait)
 conn.commit()
 root_avant = conn.execute("SELECT rootpage FROM sqlite_master WHERE name='mouvements_stock'").fetchone()[0]
-conn.close()
+db.close_connection()  # reset _conn_persistante
 db.init_database()  # 2e init
 conn = db.get_connection()
 root_apres = conn.execute("SELECT rootpage FROM sqlite_master WHERE name='mouvements_stock'").fetchone()[0]
-conn.close()
+db.close_connection()  # reset _conn_persistante
 check(root_avant == root_apres, "B3", "table mouvements_stock recréée au 2e démarrage (rootpage a changé)")
 
 # setup produits
 ok, _ = db.add_produit("REF-1", "Plaquette", prix_achat=1000, prix_vente=2000, stock_reserve=10, stock_vente=5)
 p1 = db.trouver_produit("REF-1")
 
-# --- B13: la caisse (main.py) contrôle produit['stock'] total mais create_vente exige stock_vente
+# --- B13: la caisse (page_caisse.py) contrôle-t-elle stock_vente à l'ajout ?
 # preuve DB-level: vendre 8 (<= stock total 15, > stock_vente 5) doit échouer
 ok, msg, vid = db.create_vente("Client", [(p1["id"], 8, 2000)])
 check(not ok, "B13-db", "vente 8 avec stock_vente=5, total=15 refusée par create_vente (l'UI panier accepte pourtant jusqu'à 15)")
-import inspect, main
-src = inspect.getsource(main.Application._ajouter_produit_panier)
-check('stock_vente' in src, "B13-ui", "_ajouter_produit_panier contrôle stock_vente (sinon panier accepte l'invendable)")
+import inspect, page_caisse
+src = inspect.getsource(page_caisse.CaisseMixin._ajouter_produit)
+check('stock_vente' in src or 'stock_dispo' in src, "B13-ui", "_ajouter_produit contrôle stock_vente (sinon l'enregistrement accepte l'invendable)")
 
 # --- B1: vente à Crédit -> montant_paye=0 transformé en total par 'montant_paye or total'
 # v3 : le crédit exige désormais un client avec plafond. On en crée un.
@@ -48,7 +48,7 @@ cli_deb = next(c for c in db.get_clients("Débiteur"))
 _c = db.get_connection()
 with _c:
     _c.execute("UPDATE clients SET plafond_credit=50000 WHERE id=?", (cli_deb["id"],))
-_c.close()
+db.close_connection()  # reset _conn_persistante
 ok, num, vid = db.create_vente("Débiteur", [(p1["id"], 2, 2000)], mode_paiement="Crédit",
                                montant_paye=0, client_id=cli_deb["id"])
 check(ok, "B1-pre", f"vente à crédit acceptée avec plafond client ({num})")

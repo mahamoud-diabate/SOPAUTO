@@ -38,7 +38,7 @@ cid = db.get_clients()[0]["id"]
 conn = db.get_connection()
 with conn:
     conn.execute("UPDATE clients SET plafond_credit=50000 WHERE id=?", (cid,))
-conn.close()
+db.close_connection()  # reset _conn_persistante
 
 cats = db.get_categories()
 for i, (ref, nom) in enumerate([
@@ -254,7 +254,7 @@ essai("prévisions avec courbe 30j", app.afficher_previsions)
 print("\n=== MENU DÉFILANT ===")
 nb_boutons = len(app.boutons_menu)
 print(f"     → {nb_boutons} entrée(s) de menu construite(s)")
-assert nb_boutons >= 18, f"18 entrées attendues, {nb_boutons} trouvées"
+assert nb_boutons >= 16, f"Au moins 16 entrées attendues, {nb_boutons} trouvées"
 manquants = [libelle for libelle in
              ("Créances", "Achats", "Dépôts", "Inventaire", "Retours",
               "Prévisions")

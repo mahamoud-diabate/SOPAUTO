@@ -180,8 +180,9 @@ class VehiculesMixin:
                 parent=self.root)
             return
         self.afficher_caisse()
-        self._ajouter_produit_panier(produit_id, 1)
-        self.statut(f"« {p['nom']} » ajouté au panier", COULEURS["success"])
+        self.var_qte.set("1")
+        self._ajouter_produit(produit_id)
+        self.statut(f"« {p['nom']} » ajouté à l'enregistrement", COULEURS["success"])
 
     def _lier_compatibilite(self):
         produits = db.get_produits(inclure_inactifs=False)

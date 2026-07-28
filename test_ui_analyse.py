@@ -54,7 +54,7 @@ def vendre(pid, qte, prix, jours_avant=0, client="Client", vendeur="admin"):
         conn = db.get_connection()
         with conn:
             conn.execute("UPDATE ventes SET date_vente=? WHERE id=?", (date, vid))
-        conn.close()
+        db.close_connection()  # reset _conn_persistante
     return vid
 
 

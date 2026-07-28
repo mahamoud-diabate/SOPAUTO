@@ -161,7 +161,7 @@ ok(not s, f"crédit sans client identifié refusé : {msg}")
 conn = db.get_connection()
 with conn:
     conn.execute("UPDATE clients SET plafond_credit=20000 WHERE id=?", (cid,))
-conn.close()
+db.close_connection()  # reset _conn_persistante — le backup restore la ferme
 
 s, msg, vid = db.create_vente("Garage Koné", [(p["id"], 2, 5000)],
                               mode_paiement="Crédit", montant_paye=0, client_id=cid)
@@ -522,8 +522,7 @@ ok(not neg_cump, "aucun CUMP négatif")
 sans_depot = conn.execute("SELECT COUNT(*) FROM ventes WHERE depot_id IS NULL").fetchone()[0]
 ok(sans_depot == 0, f"toutes les ventes ont un dépôt ({sans_depot} sans)")
 
-conn.close()
-
+db.close_connection()  # reset _conn_persistante
 
 # ═══════════════════════════════════════════════
 print("\n" + "=" * 50)

@@ -10,7 +10,7 @@ from .core import DialogueBase
 class DialogueProduit(DialogueBase):
     def __init__(self, parent, produit=None) -> None:
         titre = "✏️ Modifier le produit" if produit else "➕ Nouveau produit"
-        super().__init__(parent, titre, 680, 720)
+        super().__init__(parent, titre, 640, 670)
         self.produit = produit
         self.categories = db.get_categories()
         self.fournisseurs = db.get_fournisseurs()
@@ -19,39 +19,45 @@ class DialogueProduit(DialogueBase):
         f = self.corps
         r = 0
 
-        self.e_ref = self.champ(f, r, "Référence *", p.get("reference", ""),
-                                aide="unique"); r += 1
+        # Référence
         if not produit:
-            Bouton(f, "Générer", "info", self._generer_ref, petit=True).grid(
-                row=r, column=1, sticky="w", pady=(0, 4)); r += 1
+            tk.Label(f, text="Référence *", font=(POLICE, 10, "bold"), bg=COULEURS["bg"],
+                     fg=COULEURS["text"], anchor="w").grid(row=r, column=0, sticky="w", pady=3)
+            self.e_ref = tk.Entry(f, font=(POLICE, 10), width=20, bd=1, relief=tk.SOLID,
+                                  bg=COULEURS["input_bg"], fg=COULEURS["input_fg"])
+            self.e_ref.insert(0, str(p.get("reference", "")))
+            self.e_ref.grid(row=r, column=1, sticky="ew", padx=(8, 0), pady=3, ipady=3)
+            Bouton(f, "⚡ Générer", "info", self._generer_ref, petit=True).grid(
+                row=r, column=2, sticky="w", padx=6); r += 1
+        else:
+            self.e_ref = self.champ(f, r, "Référence *", p.get("reference", ""), aide="unique"); r += 1
 
-        self.e_nom = self.champ(f, r, "Désignation *", p.get("nom", "")); r += 1
+        # Nom de la pièce (ex: Filtre à huile)
+        self.e_nom = self.champ(f, r, "Nom de la pièce *", p.get("nom", "")); r += 1
         self.e_marque = self.champ(f, r, "Marque", p.get("marque", "")); r += 1
-        self.e_cb = self.champ(f, r, "Code-barres", p.get("code_barres", ""),
-                               aide="scan"); r += 1
 
         # Catégorie
         tk.Label(f, text="Catégorie", font=(POLICE, 10), bg=COULEURS["bg"],
-                 anchor="w").grid(row=r, column=0, sticky="w", pady=4)
+                 anchor="w").grid(row=r, column=0, sticky="w", pady=3)
         self.cb_cat = ttk.Combobox(f, state="readonly", font=(POLICE, 10),
                                    values=[""] + [c["nom"] for c in self.categories])
-        self.cb_cat.grid(row=r, column=1, sticky="ew", padx=(8, 0), pady=4)
+        self.cb_cat.grid(row=r, column=1, sticky="ew", padx=(8, 0), pady=3)
         if p.get("categorie_nom"):
             self.cb_cat.set(p["categorie_nom"])
         r += 1
 
         # Fournisseur
         tk.Label(f, text="Fournisseur", font=(POLICE, 10), bg=COULEURS["bg"],
-                 anchor="w").grid(row=r, column=0, sticky="w", pady=4)
+                 anchor="w").grid(row=r, column=0, sticky="w", pady=3)
         self.cb_four = ttk.Combobox(f, state="readonly", font=(POLICE, 10),
                                     values=[""] + [x["nom"] for x in self.fournisseurs])
-        self.cb_four.grid(row=r, column=1, sticky="ew", padx=(8, 0), pady=4)
+        self.cb_four.grid(row=r, column=1, sticky="ew", padx=(8, 0), pady=3)
         if p.get("fournisseur_nom"):
             self.cb_four.set(p["fournisseur_nom"])
         r += 1
 
         ttk.Separator(f, orient="horizontal").grid(row=r, column=0, columnspan=3,
-                                                   sticky="ew", pady=8); r += 1
+                                                   sticky="ew", pady=6); r += 1
 
         devise = db.get_devise()
         self.e_pa = self.champ(f, r, f"Prix d'achat ({devise})", p.get("prix_achat", 0)); r += 1
@@ -59,47 +65,56 @@ class DialogueProduit(DialogueBase):
 
         self.lbl_marge = tk.Label(f, text="", font=(POLICE, 9, "bold"),
                                   bg=COULEURS["bg"], fg=COULEURS["success"])
-        self.lbl_marge.grid(row=r, column=1, sticky="w", pady=(0, 4)); r += 1
+        self.lbl_marge.grid(row=r, column=1, sticky="w", pady=(0, 2)); r += 1
         for e in (self.e_pa, self.e_pv):
             e.bind("<KeyRelease>", lambda ev: self._maj_marge())
         self._maj_marge()
 
-        if produit:
-            tk.Label(f, text="Stock réserve", font=(POLICE, 10), bg=COULEURS["bg"],
-                     anchor="w").grid(row=r, column=0, sticky="w", pady=4)
-            tk.Label(f, text=f"{p.get('stock_reserve', 0)} — transferable via Stock",
-                     font=(POLICE, 10, "bold"), bg=COULEURS["bg"],
-                     fg=COULEURS["info"]).grid(row=r, column=1, sticky="w", padx=(8, 0))
-            r += 1
-            tk.Label(f, text="Stock vente", font=(POLICE, 10), bg=COULEURS["bg"],
-                     anchor="w").grid(row=r, column=0, sticky="w", pady=4)
-            tk.Label(f, text=f"{p.get('stock_vente', 0)} — modifiable via Stock",
-                     font=(POLICE, 10, "bold"), bg=COULEURS["bg"],
-                     fg=COULEURS["info"]).grid(row=r, column=1, sticky="w", padx=(8, 0))
-            r += 1
-        else:
+        if not produit:
+            self.e_stock_vente = self.champ(f, r, "Stock rayon (vente)", 0); r += 1
             self.e_stock_reserve = self.champ(f, r, "Stock réserve (entrepôt)", 0); r += 1
-            self.e_stock_vente = self.champ(f, r, "Stock vente (rayon)", 0); r += 1
+        else:
+            self.e_stock_vente = None
+            self.e_stock_reserve = None
 
-        self.e_mini = self.champ(f, r, "Seuil d'alerte", p.get("stock_mini", 5),
-                                 aide="alerte si stock ≤ seuil"); r += 1
-        self.e_emp = self.champ(f, r, "Emplacement", p.get("emplacement", ""),
-                                aide="ex : Rayon A3"); r += 1
-        self.e_desc = self.champ(f, r, "Description", p.get("description", "")); r += 1
+        self.e_mini = self.champ(f, r, "Seuil d'alerte", p.get("stock_mini", 5)); r += 1
+
+        # Variables fictives pour compatibilité backend
+        self.e_cb = tk.Entry(f)
+        self.e_emp = tk.Entry(f)
+        self.e_desc = tk.Entry(f)
 
         self.var_actif = tk.BooleanVar(value=bool(p.get("actif", 1)))
         tk.Checkbutton(f, text="Produit actif (visible en caisse)", variable=self.var_actif,
                        bg=COULEURS["bg"], font=(POLICE, 9), anchor="w",
                        activebackground=COULEURS["bg"]).grid(row=r, column=1, sticky="w",
-                                                             padx=(8, 0), pady=6)
+                                                             padx=(8, 0), pady=4)
+
+        if not produit:
+            self._generer_ref()
+            self.cb_cat.bind("<<ComboboxSelected>>", lambda e: self._sur_changement_cat())
+            self.e_nom.bind("<KeyRelease>", lambda e: self._sur_changement_cat())
+            self.e_nom.bind("<FocusOut>", lambda e: self._sur_changement_cat())
+            self.e_marque.bind("<KeyRelease>", lambda e: self._sur_changement_cat())
 
         self.boutons()
         self.e_ref.focus_set()
 
+    def _sur_changement_cat(self):
+        if not self.produit:
+            self._generer_ref()
+
     def _generer_ref(self) -> None:
-        cat_id = self._id_categorie()
+        nom = self.e_nom.get().strip() if hasattr(self, 'e_nom') else ""
+        marque = self.e_marque.get().strip() if hasattr(self, 'e_marque') else ""
+        cat_nom = self.cb_cat.get().strip() if hasattr(self, 'cb_cat') else ""
+
+        ref = db.suggerer_reference_intelligente(prefixe=marque,
+                                                 categorie_code=cat_nom,
+                                                 designation=nom)
+
         self.e_ref.delete(0, tk.END)
-        self.e_ref.insert(0, db.suggerer_reference(cat_id))
+        self.e_ref.insert(0, ref)
 
     def _maj_marge(self) -> None:
         try:
@@ -115,6 +130,8 @@ class DialogueProduit(DialogueBase):
             text=f"Marge : {fmt_money(marge, db.get_devise())} ({pct:+.1f} %)", fg=couleur)
 
     def _id_categorie(self) -> int | None:
+        if not hasattr(self, 'cb_cat'):
+            return None
         nom = self.cb_cat.get()
         return next((c["id"] for c in self.categories if c["nom"] == nom), None)
 
@@ -124,6 +141,8 @@ class DialogueProduit(DialogueBase):
 
     def valider(self) -> None:
         def nombre(entry, entier=False, defaut=0):
+            if entry is None:
+                return defaut
             texte = entry.get().replace(" ", "").replace(",", ".").strip()
             if not texte:
                 return defaut
@@ -174,7 +193,7 @@ class DialogueProduit(DialogueBase):
 class DialogueCategorie(DialogueBase):
     def __init__(self, parent, categorie=None) -> None:
         super().__init__(parent, "✏️ Modifier la catégorie" if categorie else "➕ Nouvelle catégorie",
-                         460, 280)
+                         540, 280)
         self.categorie = categorie
         c = categorie or {}
         self.e_nom = self.champ(self.corps, 0, "Nom *", c.get("nom", ""))
@@ -198,7 +217,7 @@ class DialogueCategorie(DialogueBase):
 class DialogueFournisseur(DialogueBase):
     def __init__(self, parent, fournisseur=None) -> None:
         super().__init__(parent, "✏️ Modifier le fournisseur" if fournisseur else "➕ Nouveau fournisseur",
-                         520, 380)
+                         640, 380)
         self.fournisseur = fournisseur
         f = fournisseur or {}
         self.e_nom = self.champ(self.corps, 0, "Nom / Société *", f.get("nom", ""))
@@ -228,7 +247,7 @@ class DialogueFournisseur(DialogueBase):
 class DialogueClient(DialogueBase):
     def __init__(self, parent, client=None) -> None:
         super().__init__(parent, "✏️ Modifier le client" if client else "➕ Nouveau client",
-                         520, 420)
+                         640, 400)
         self.client = client
         c = client or {}
         self.e_nom = self.champ(self.corps, 0, "Nom *", c.get("nom", ""))
@@ -242,11 +261,14 @@ class DialogueClient(DialogueBase):
         self.e_nom.focus_set()
 
     def valider(self) -> None:
-        args = (self.e_nom.get().strip(), self.e_tel.get().strip(), self.e_mail.get().strip(),
-                self.e_adr.get().strip(), self.e_veh.get().strip(), self.e_notes.get().strip())
-        if not args[0]:
+        nom = self.e_nom.get().strip()
+        if not nom:
             messagebox.showerror("Erreur", "Le nom est requis.", parent=self.dialog)
             return
+
+        args = (nom, self.e_tel.get().strip(), self.e_mail.get().strip(),
+                self.e_adr.get().strip(), self.e_veh.get().strip(), self.e_notes.get().strip())
+
         if self.client:
             ok, msg = db.update_client(self.client["id"], *args)
         else:
@@ -265,7 +287,7 @@ class DialogueUtilisateur(DialogueBase):
 
     def __init__(self, parent, utilisateur=None) -> None:
         super().__init__(parent, "✏️ Modifier l'utilisateur" if utilisateur else "➕ Nouvel utilisateur",
-                         500, 380)
+                         620, 400)
         self.utilisateur = utilisateur
         u = utilisateur or {}
         f = self.corps

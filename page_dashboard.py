@@ -69,7 +69,7 @@ class DashboardMixin:
 
 
     def _dessiner_graphe(self, parent, donnees, jours_affiches=7, titre_court=True):
-        """Courbe linéaire du CA sur les N derniers jours (Canvas natif)."""
+        """Histogramme moderne ou courbe du CA sur les N derniers jours."""
         canvas = tk.Canvas(parent, height=170, bg=COULEURS["card"], highlightthickness=0)
         canvas.pack(fill=tk.X)
 
@@ -82,10 +82,9 @@ class DashboardMixin:
             serie.append((jour, jours.get(jour, 0)))
 
         etat = {"points": [], "survol": None}
+        mode = getattr(self, "_type_graphe_dashboard", "barres")
 
         def redessiner(_event=None):
-            # Le Canvas peut avoir été détruit par un changement de page avant
-            # que le callback « after » ne se déclenche.
             try:
                 if not canvas.winfo_exists():
                     return
@@ -99,7 +98,7 @@ class DashboardMixin:
             marge_g, marge_d, marge_b, marge_h = 62, 16, 28, 22
             zone_h = hauteur - marge_b - marge_h
             zone_l = largeur - marge_g - marge_d
-            n = max(1, len(serie) - 1)
+            n = max(1, len(serie))
             pas = zone_l / n
 
             # ── Grille horizontale + échelle ──
@@ -112,54 +111,87 @@ class DashboardMixin:
                                        fill=COULEURS["text_secondary"],
                                        text=fmt_money(maxi * frac))
 
-            # ── Coordonnées des points ──
-            points = []
-            for i, (jour, valeur) in enumerate(serie):
-                x = marge_g + i * pas
-                y = marge_h + zone_h - (valeur / maxi) * zone_h
-                points.append((x, y, jour, valeur))
-            etat["points"] = points
-
-            couleur = COULEURS.get("graph_line", COULEURS["primary"])
-
-            # ── Aire de remplissage sous la courbe ──
-            if len(points) > 1:
-                polygone = [marge_g, marge_h + zone_h]
-                for x, y, _, _ in points:
-                    polygone += [x, y]
-                polygone += [points[-1][0], marge_h + zone_h]
-                canvas.create_polygon(polygone, fill=COULEURS["primary_light"],
-                                      outline="", width=0)
-
-                # ── La ligne ──
-                ligne = []
-                for x, y, _, _ in points:
-                    ligne += [x, y]
-                canvas.create_line(ligne, fill=couleur, width=2,
-                                   smooth=True, splinesteps=12, capstyle=tk.ROUND)
-
-            # ── Marqueurs + étiquettes ──
             aujourd_hui = datetime.now().strftime("%Y-%m-%d")
-            pas_etiq = 1 if len(serie) <= 10 else max(1, len(serie) // 8)
-            for i, (x, y, jour, valeur) in enumerate(points):
-                est_auj = (jour == aujourd_hui)
-                rayon = 5 if est_auj else 3
-                canvas.create_oval(x - rayon, y - rayon, x + rayon, y + rayon,
-                                   fill=COULEURS["card"], outline=couleur,
-                                   width=2 if est_auj else 1.5)
-                # Valeur affichée sur le dernier point et le maximum
-                if valeur and (est_auj or valeur == maxi):
-                    canvas.create_text(x, y - 12, text=fmt_money(valeur),
-                                       font=(POLICE, 7, "bold"), fill=COULEURS["text"])
-                if i % pas_etiq == 0 or est_auj:
+
+            if mode == "barres":
+                # ── Rendu Diagramme en bâtons (Histogramme) ──
+                w_barre = max(16, min(44, pas * 0.55))
+                points = []
+                for i, (jour, valeur) in enumerate(serie):
+                    cx = marge_g + i * pas + pas / 2
+                    h_barre = (valeur / maxi) * zone_h if maxi > 0 else 0
+                    y0 = marge_h + zone_h - h_barre
+                    y1 = marge_h + zone_h
+                    x0 = cx - w_barre / 2
+                    x1 = cx + w_barre / 2
+
+                    est_auj = (jour == aujourd_hui)
+                    couleur_barre = COULEURS["primary"] if est_auj else COULEURS.get("graph_line", "#4f46e5")
+
+                    # Barre principale
+                    if h_barre > 0:
+                        canvas.create_rectangle(x0, y0, x1, y1, fill=couleur_barre, outline="", tags=f"b_{i}")
+                        # Ligne supérieure de brillance
+                        canvas.create_line(x0, y0, x1, y0, fill="#ffffff", width=2, tags=f"b_{i}")
+                    else:
+                        # Baseline discrète si 0 CA
+                        canvas.create_rectangle(x0, y1 - 3, x1, y1, fill=COULEURS["border"], outline="")
+
+                    # Label de valeur sur la barre
+                    if valeur > 0:
+                        canvas.create_text(cx, y0 - 10, text=fmt_money(valeur),
+                                           font=(POLICE, 7, "bold"), fill=COULEURS["text"])
+
+                    # Étiquette de date sous la barre
                     fmt = "%a %d" if titre_court else "%d/%m"
                     etiquette = datetime.strptime(jour, "%Y-%m-%d").strftime(fmt)
-                    canvas.create_text(x, marge_h + zone_h + 14,
-                                       text=etiquette.capitalize(), font=(POLICE, 8),
+                    canvas.create_text(cx, marge_h + zone_h + 14, text=etiquette.capitalize(),
+                                       font=(POLICE, 8, "bold" if est_auj else "normal"),
+                                       fill=COULEURS["primary"] if est_auj else COULEURS["text_secondary"])
+
+                    points.append((cx, y0, jour, valeur, x0, x1, y1))
+                etat["points"] = points
+
+            else:
+                # ── Rendu Courbe linéaire ──
+                n_pts = max(1, len(serie) - 1)
+                pas_pts = zone_l / n_pts
+                points = []
+                for i, (jour, valeur) in enumerate(serie):
+                    x = marge_g + i * pas_pts
+                    y = marge_h + zone_h - (valeur / maxi) * zone_h
+                    points.append((x, y, jour, valeur, x - 5, x + 5, y))
+                etat["points"] = points
+
+                couleur = COULEURS.get("graph_line", COULEURS["primary"])
+                if len(points) > 1:
+                    polygone = [marge_g, marge_h + zone_h]
+                    for x, y, _, _, _, _, _ in points:
+                        polygone += [x, y]
+                    polygone += [points[-1][0], marge_h + zone_h]
+                    canvas.create_polygon(polygone, fill=COULEURS["primary_light"], outline="", width=0)
+
+                    ligne = []
+                    for x, y, _, _, _, _, _ in points:
+                        ligne += [x, y]
+                    canvas.create_line(ligne, fill=couleur, width=2,
+                                       smooth=True, splinesteps=12, capstyle=tk.ROUND)
+
+                for i, (x, y, jour, valeur, _, _, _) in enumerate(points):
+                    est_auj = (jour == aujourd_hui)
+                    rayon = 5 if est_auj else 3
+                    canvas.create_oval(x - rayon, y - rayon, x + rayon, y + rayon,
+                                       fill=COULEURS["card"], outline=couleur, width=2 if est_auj else 1.5)
+                    if valeur and (est_auj or valeur == maxi):
+                        canvas.create_text(x, y - 12, text=fmt_money(valeur),
+                                           font=(POLICE, 7, "bold"), fill=COULEURS["text"])
+                    fmt = "%a %d" if titre_court else "%d/%m"
+                    etiquette = datetime.strptime(jour, "%Y-%m-%d").strftime(fmt)
+                    canvas.create_text(x, marge_h + zone_h + 14, text=etiquette.capitalize(),
+                                       font=(POLICE, 8, "bold" if est_auj else "normal"),
                                        fill=couleur if est_auj else COULEURS["text_secondary"])
 
         def survol(event):
-            """Repère vertical + valeur au passage de la souris."""
             try:
                 if not canvas.winfo_exists() or not etat["points"]:
                     return
@@ -167,9 +199,9 @@ class DashboardMixin:
             except tk.TclError:
                 return
             proche = min(etat["points"], key=lambda p: abs(p[0] - event.x))
-            x, y, jour, valeur = proche
-            canvas.create_line(x, 18, x, 148, fill=COULEURS["secondary"],
-                               dash=(2, 3), tags="survol")
+            x = proche[0]
+            jour, valeur = proche[2], proche[3]
+            canvas.create_line(x, 18, x, 148, fill=COULEURS["secondary"], dash=(2, 3), tags="survol")
             libelle = f"{datetime.strptime(jour, '%Y-%m-%d').strftime('%d/%m')} : {fmt_money(valeur)}"
             largeur_txt = len(libelle) * 6 + 12
             bx = min(max(x, largeur_txt / 2 + 4), (canvas.winfo_width() or 900) - largeur_txt / 2 - 4)
@@ -275,39 +307,54 @@ class DashboardMixin:
         rempli.place(relx=0, rely=0, relwidth=pct / 100, relheight=1)
 
 
+    def _basculer_type_graphe(self, s=None):
+        actuel = getattr(self, "_type_graphe_dashboard", "barres")
+        self._type_graphe_dashboard = "courbe" if actuel == "barres" else "barres"
+        self.afficher_dashboard()
+
     def _activite_mois(self, s):
-        """Graphique + activité par vendeur et paiement."""
+        """Graphique (Histogramme/Courbe) + activité par vendeur et paiement."""
         milieu = tk.Frame(self.zone, bg=COULEURS["bg"])
         milieu.pack(fill=tk.X, pady=(0, 8))
-        graphe = Carte(milieu, "📈 Chiffre d'affaires — 7 derniers jours")
+        mode = getattr(self, "_type_graphe_dashboard", "barres")
+        titre_g = "📊 Histogramme du CA — 7 derniers jours" if mode == "barres" else "📈 Courbe du CA — 7 derniers jours"
+        graphe = Carte(milieu, titre_g)
         graphe.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
+
+        if hasattr(graphe, 'entete'):
+            lbl_bt = "📈 Voir en courbe" if mode == "barres" else "📊 Voir en histogramme"
+            Bouton(graphe.entete, lbl_bt, "primary",
+                   self._basculer_type_graphe, petit=True, outline=True).pack(side=tk.RIGHT, padx=4)
+
         self._dessiner_graphe(graphe.corps, s["ventes_7j"])
         c_activite = Carte(milieu, "📊 Activité du mois")
-        c_activite.pack(side=tk.LEFT, fill=tk.BOTH, padx=(6, 0))
+        c_activite.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
         act = c_activite.corps
         tk.Label(act, text="Par vendeur", font=(POLICE, 9, "bold"),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w")
-        tv = ttk.Treeview(act, show="headings", height=3,
+        tv = ttk.Treeview(act, show="headings", height=4,
                           columns=("vendeur", "nb", "ca", "panier"))
+        tv.column("#0", width=0, stretch=False)
         for col, titre, largeur, ancre in (("vendeur", "Vendeur", 110, "w"),
-                                           ("nb", "Ventes", 55, "center"),
-                                           ("ca", "CA", 100, "e"),
-                                           ("panier", "Panier moy.", 90, "e")):
-            tv.heading(col, text=titre)
-            tv.column(col, width=largeur, anchor=ancre)
+                                           ("nb", "Ventes", 60, "center"),
+                                           ("ca", "CA", 105, "e"),
+                                           ("panier", "Panier moy.", 95, "e")):
+            tv.heading(col, text=titre, anchor=ancre)
+            tv.column(col, width=largeur, minwidth=35, anchor=ancre, stretch=True)
         for v in s["par_vendeur_mois"]:
             tv.insert("", tk.END, values=(v["vendeur"], v["nb"],
                                           fmt_money(v["ca"]), fmt_money(v["panier"])))
         tv.pack(fill=tk.X)
         tk.Label(act, text="Par mode de paiement", font=(POLICE, 9, "bold"),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(8, 0))
-        tp = ttk.Treeview(act, show="headings", height=3,
+        tp = ttk.Treeview(act, show="headings", height=4,
                           columns=("mode", "nb", "ca"))
+        tp.column("#0", width=0, stretch=False)
         for col, titre, largeur, ancre in (("mode", "Mode", 130, "w"),
                                            ("nb", "Nb", 50, "center"),
                                            ("ca", "Montant", 120, "e")):
-            tp.heading(col, text=titre)
-            tp.column(col, width=largeur, anchor=ancre)
+            tp.heading(col, text=titre, anchor=ancre)
+            tp.column(col, width=largeur, minwidth=35, anchor=ancre, stretch=True)
         for p in s["par_paiement_mois"]:
             tp.insert("", tk.END, values=(p["mode"], p["nb"], fmt_money(p["ca"])))
         tp.pack(fill=tk.X)
@@ -318,12 +365,12 @@ class DashboardMixin:
         bas = tk.Frame(self.zone, bg=COULEURS["bg"])
         bas.pack(fill=tk.BOTH, expand=True)
         c_alertes = Carte(bas, f"🚨 Alertes de stock ({s['nb_alertes']})")
-        c_alertes.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
+        c_alertes.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 4))
         if s["alertes_stock"]:
             t = TableauTriable(c_alertes.corps, [
                 ("nom", "Produit", 130, "w", False), ("cat", "Catégorie", 80, "w", False),
                 ("stock", "Stock", 45, "center", True), ("mini", "Seuil", 40, "center", True),
-                ("rupture", "Rupture", 75, "center", False)], height=9)
+                ("rupture", "Rupture", 75, "center", False)], height=7)
             for i, a in enumerate(s["alertes_stock"]):
                 text_r = ""
                 if a.get("rupture_jours") is not None:
@@ -338,27 +385,27 @@ class DashboardMixin:
                 infobulle(t, "Double-clic : entrée de stock rapide")
         else:
             tk.Label(c_alertes.corps, text="✅ Tous les stocks sont suffisants",
-                     font=(POLICE, 11), bg=COULEURS["card"],
-                     fg=COULEURS["success"]).pack(pady=40)
+                     font=(POLICE, 10, "bold"), bg=COULEURS["card"],
+                     fg=COULEURS["success"]).pack(pady=25)
         c_top = Carte(bas, "🏆 Top ventes (30 jours)")
-        c_top.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=6)
+        c_top.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
         if s["top_produits"]:
             t = TableauTriable(c_top.corps, [
-                ("nom", "Produit", 180, "w", False), ("qte", "Qté", 55, "center", True),
-                ("ca", "CA", 100, "e", True)], height=9)
+                ("nom", "Produit", 160, "w", False), ("qte", "Qté", 50, "center", True),
+                ("ca", "CA", 95, "e", True)], height=7)
             for i, p in enumerate(s["top_produits"]):
                 t.insert("", tk.END, tags=zebre(i),
                          values=(p["nom"], p["qte"], fmt_money(p["ca"])))
             t.pack(fill=tk.BOTH, expand=True)
         else:
             tk.Label(c_top.corps, text="Aucune vente sur 30 jours", font=(POLICE, 10),
-                     bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(pady=40)
+                     bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(pady=25)
         c_ventes = Carte(bas, "🧾 Dernières ventes")
-        c_ventes.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
+        c_ventes.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
         if s["dernieres_ventes"]:
             t = TableauTriable(c_ventes.corps, [
-                ("num", "N°", 110, "w", False), ("client", "Client", 110, "w", False),
-                ("total", "Total", 95, "e", True), ("date", "Date", 105, "w", False)], height=9)
+                ("num", "N° Facture", 115, "w", False), ("client", "Client", 120, "w", False),
+                ("total", "Total Net", 95, "e", True), ("date", "Date", 100, "w", False)], height=7)
             for i, v in enumerate(s["dernieres_ventes"]):
                 etat = ("annulee",) if v["statut"] == "annulee" else ()
                 t.insert("", tk.END, iid=v["id"], tags=zebre(i, etat),
@@ -369,7 +416,7 @@ class DashboardMixin:
             infobulle(t, "Double-clic : imprimer la facture")
         else:
             tk.Label(c_ventes.corps, text="Aucune vente enregistrée", font=(POLICE, 10),
-                     bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(pady=40)
+                     bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(pady=25)
 
         self._panneau_alertes_commerciales()
 

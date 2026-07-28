@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox, simpledialog
 import database as db
 import metier_v3 as m3
 from ui_widgets import (COULEURS, POLICE, Bouton, AutocompleteCombobox,
-                        centrer_fenetre, fmt_money)
+                        centrer_fenetre, fmt_money, parse_float)
 from .core import DialogueBase
 
 class DialogueMouvement(DialogueBase):
@@ -16,21 +16,21 @@ class DialogueMouvement(DialogueBase):
 
     def __init__(self, parent, type_mvt, produit_id=None) -> None:
         titre, couleur = self.LIBELLES[type_mvt]
-        super().__init__(parent, titre, 600, 500)
+        super().__init__(parent, titre, 680, 560)
         self.type_mvt = type_mvt
-        self.cible = None  # reserve / vente pour transfert ou entree/sortie ciblée
+        self.cible = None
         self.produits = db.get_produits(inclure_inactifs=False)
 
         f = self.corps
         r = 0
 
-        tk.Label(f, text="Produit *", font=(POLICE, 10), bg=COULEURS["bg"],
-                 anchor="w").grid(row=r, column=0, sticky="w", pady=4)
-        self.cb_prod = AutocompleteCombobox(f, font=(POLICE, 10), width=42)
-        self._etiquettes = {f"{p['reference']} — {p['nom']} (R:{p['stock_reserve']} V:{p['stock_vente']})": p
+        tk.Label(f, text="Produit *", font=(POLICE, 10, "bold"), bg=COULEURS["bg"],
+                 anchor="w").grid(row=r, column=0, sticky="w", pady=6)
+        self.cb_prod = AutocompleteCombobox(f, font=(POLICE, 10), width=44)
+        self._etiquettes = {f"{p['reference']} — {p['nom']} (Réserve: {p['stock_reserve']} | Rayon: {p['stock_vente']})": p
                             for p in self.produits}
         self.cb_prod.set_completion_list(list(self._etiquettes))
-        self.cb_prod.grid(row=r, column=1, sticky="ew", padx=(8, 0), pady=4)
+        self.cb_prod.grid(row=r, column=1, columnspan=2, sticky="ew", padx=(8, 0), pady=6)
         f.columnconfigure(1, weight=1)
         r += 1
 
@@ -40,49 +40,52 @@ class DialogueMouvement(DialogueBase):
                     self.cb_prod.set(etiquette)
                     break
 
-        self.lbl_info = tk.Label(f, text="", font=(POLICE, 9), bg=COULEURS["bg"],
+        self.lbl_info = tk.Label(f, text="", font=(POLICE, 9, "bold"), bg=COULEURS["bg"],
                                  fg=COULEURS["info"], justify="left")
-        self.lbl_info.grid(row=r, column=1, sticky="w", padx=(8, 0))
+        self.lbl_info.grid(row=r, column=1, columnspan=2, sticky="w", padx=(8, 0), pady=(0, 6))
         r += 1
         self.cb_prod.bind("<<ComboboxSelected>>", lambda e: self._maj_info())
+        self.cb_prod.bind("<KeyRelease>", lambda e: self._maj_info())
 
-        # Sélecteur d'emplacement (réserve / vente) — inutile pour un transfert
-        # qui a son propre sélecteur de direction.
         self.var_emp = tk.StringVar(value="vente")
         if type_mvt != "transfert":
+            tk.Label(f, text="Emplacement :", font=(POLICE, 10, "bold"),
+                     bg=COULEURS["bg"], anchor="w").grid(row=r, column=0, sticky="w", pady=6)
             cadre_emp = tk.Frame(f, bg=COULEURS["bg"])
-            cadre_emp.grid(row=r, column=0, columnspan=2, sticky="w", pady=4)
-            tk.Label(cadre_emp, text="Emplacement :", font=(POLICE, 10),
-                     bg=COULEURS["bg"]).pack(side=tk.LEFT)
-            tk.Radiobutton(cadre_emp, text="Vente (rayon)", variable=self.var_emp, value="vente",
-                           bg=COULEURS["bg"], font=(POLICE, 9), command=self._maj_info,
-                           activebackground=COULEURS["bg"]).pack(side=tk.LEFT, padx=(8, 2))
-            tk.Radiobutton(cadre_emp, text="Réserve (entrepôt)", variable=self.var_emp, value="reserve",
-                           bg=COULEURS["bg"], font=(POLICE, 9), command=self._maj_info,
-                           activebackground=COULEURS["bg"]).pack(side=tk.LEFT, padx=2)
+            cadre_emp.grid(row=r, column=1, columnspan=2, sticky="w", padx=(8, 0), pady=6)
+            tk.Radiobutton(cadre_emp, text="Vente (Rayon)", variable=self.var_emp, value="vente",
+                           bg=COULEURS["bg"], font=(POLICE, 9, "bold"), command=self._maj_info,
+                           activebackground=COULEURS["bg"]).pack(side=tk.LEFT, padx=(0, 12))
+            tk.Radiobutton(cadre_emp, text="Réserve (Entrepôt)", variable=self.var_emp, value="reserve",
+                           bg=COULEURS["bg"], font=(POLICE, 9, "bold"), command=self._maj_info,
+                           activebackground=COULEURS["bg"]).pack(side=tk.LEFT, padx=4)
             r += 1
 
         if type_mvt == "transfert":
-            # Pour transfert, on affiche la direction
             self.var_dir = tk.StringVar(value="vente")
+            tk.Label(f, text="Direction :", font=(POLICE, 10, "bold"),
+                     bg=COULEURS["bg"], anchor="w").grid(row=r, column=0, sticky="nw", pady=6)
             cadre_dir = tk.Frame(f, bg=COULEURS["bg"])
-            cadre_dir.grid(row=r, column=0, columnspan=2, sticky="w", pady=4)
-            tk.Label(cadre_dir, text="Direction :", font=(POLICE, 10),
-                     bg=COULEURS["bg"]).pack(side=tk.LEFT)
-            tk.Radiobutton(cadre_dir, text="Réserve → Vente", variable=self.var_dir, value="vente",
-                           bg=COULEURS["bg"], font=(POLICE, 9),
+            cadre_dir.grid(row=r, column=1, columnspan=2, sticky="w", padx=(8, 0), pady=6)
+            tk.Radiobutton(cadre_dir, text="🔴 Réserve (Entrepôt) ➔ 🟢 Rayon (Vente)", variable=self.var_dir, value="vente",
+                           bg=COULEURS["bg"], font=(POLICE, 10, "bold"), fg=COULEURS["primary"],
                            activebackground=COULEURS["bg"],
-                           command=self._maj_info).pack(side=tk.LEFT, padx=(8, 2))
-            tk.Radiobutton(cadre_dir, text="Vente → Réserve", variable=self.var_dir, value="reserve",
-                           bg=COULEURS["bg"], font=(POLICE, 9),
+                           command=self._maj_info).pack(anchor="w", pady=(0, 4))
+            tk.Radiobutton(cadre_dir, text="🟢 Rayon (Vente) ➔ 🔴 Réserve (Entrepôt)", variable=self.var_dir, value="reserve",
+                           bg=COULEURS["bg"], font=(POLICE, 10, "bold"), fg=COULEURS["text"],
                            activebackground=COULEURS["bg"],
-                           command=self._maj_info).pack(side=tk.LEFT, padx=2)
+                           command=self._maj_info).pack(anchor="w")
             r += 1
 
         libelle_qte = "Nouveau stock réel *" if type_mvt == "correction" else "Quantité *"
         self.e_qte = self.champ(f, r, libelle_qte, 1); r += 1
-        self.e_prix = self.champ(f, r, f"Prix unitaire ({db.get_devise()})", 0,
-                                 aide="met à jour le prix d'achat" if type_mvt == "entree" else None); r += 1
+
+        if type_mvt != "transfert":
+            self.e_prix = self.champ(f, r, f"Prix unitaire ({db.get_devise()})", 0,
+                                     aide="met à jour le prix d'achat" if type_mvt == "entree" else None); r += 1
+        else:
+            self.e_prix = tk.Entry(f)
+
         self.e_doc = self.champ(f, r, "Réf. document", "", aide="facture, bon de livraison…"); r += 1
         self.e_notes = self.champ(f, r, "Motif / Notes", ""); r += 1
 
@@ -91,7 +94,7 @@ class DialogueMouvement(DialogueBase):
                      font=(POLICE, 9), bg=COULEURS["bg"], fg=COULEURS["text_secondary"],
                      justify="left").grid(row=r, column=0, columnspan=2, sticky="w", pady=4)
         elif type_mvt == "transfert":
-            tk.Label(f, text="ℹ️ Quantité à déplacer entre réserve et rayon de vente.",
+            tk.Label(f, text="ℹ️ Transférer des pièces entre l'entrepôt (réserve) et les rayons du magasin.",
                      font=(POLICE, 9), bg=COULEURS["bg"], fg=COULEURS["text_secondary"],
                      justify="left").grid(row=r, column=0, columnspan=2, sticky="w", pady=4)
 
@@ -100,68 +103,102 @@ class DialogueMouvement(DialogueBase):
         self.cb_prod.focus_set()
 
     def _produit_selectionne(self) -> dict | None:
-        return self._etiquettes.get(self.cb_prod.get())
+        val = self.cb_prod.get().strip()
+        if not val:
+            return None
+        p_base = self._etiquettes.get(val)
+        if not p_base:
+            val_lower = val.lower()
+            for p in self.produits:
+                ref = str(p.get("reference", "")).lower()
+                nom = str(p.get("nom", "")).lower()
+                if val_lower == ref or val_lower == nom or (ref and ref in val_lower) or (nom and nom in val_lower):
+                    p_base = p
+                    break
+        if p_base:
+            fresh = db.get_produit(p_base["id"])
+            return fresh or p_base
+        return None
 
     def _maj_info(self) -> None:
         p = self._produit_selectionne()
         if not p:
             self.lbl_info.configure(text="")
             return
+        sr = p.get("stock_reserve", 0)
+        sv = p.get("stock_vente", 0)
+
         if self.type_mvt == "transfert":
-            direction = self.var_dir.get()
-            source = "réserve" if direction == "vente" else "vente"
-            dest = "vente" if direction == "vente" else "réserve"
-            dispo = p["stock_reserve"] if direction == "vente" else p["stock_vente"]
-            self.lbl_info.configure(
-                text=f"Réserve : {p['stock_reserve']}  •  Vente : {p['stock_vente']}  •  "
-                     f"Disponible pour {source} → {dest} : {dispo}")
+            direction = self.var_dir.get() if hasattr(self, 'var_dir') else "vente"
+            if direction == "vente":
+                dispo = sr
+                txt = f"📦 Stock en Réserve : {sr} pièce(s)   │   🛒 Stock en Rayon : {sv} pièce(s)\n👉 Disponible en Réserve pour transfert vers le Rayon : {dispo} pièce(s)"
+            else:
+                dispo = sv
+                txt = f"📦 Stock en Réserve : {sr} pièce(s)   │   🛒 Stock en Rayon : {sv} pièce(s)\n👉 Disponible en Rayon pour transfert vers la Réserve : {dispo} pièce(s)"
+
+            couleur = COULEURS["success"] if dispo > 0 else COULEURS["danger"]
+            self.lbl_info.configure(text=txt, fg=couleur)
         else:
-            emp = self.var_emp.get()
-            stock_emp = p["stock_reserve"] if emp == "reserve" else p["stock_vente"]
-            nom_emp = "réserve" if emp == "reserve" else "vente"
-            self.lbl_info.configure(
-                text=f"Stock {nom_emp} : {stock_emp}  •  Stock total : {p['stock']}  •  "
-                     f"Seuil : {p['stock_mini']}  •  "
-                     f"P.A. : {fmt_money(p['prix_achat'], db.get_devise())}")
-        if self.type_mvt == "entree":
+            emp = self.var_emp.get() if hasattr(self, 'var_emp') else "vente"
+            stock_emp = sr if emp == "reserve" else sv
+            nom_emp = "Réserve" if emp == "reserve" else "Rayon"
+            txt = f"Stock en {nom_emp} : {stock_emp}   •   Stock total : {p.get('stock',0)}   •   Seuil : {p.get('stock_mini',5)}"
+            self.lbl_info.configure(text=txt, fg=COULEURS["info"])
+        if self.type_mvt == "entree" and hasattr(self, 'e_prix'):
             try:
-                prix_actuel = float(self.e_prix.get().replace(",", ".") or 0)
+                prix_actuel = float(self.e_prix.get().replace(",", ".").replace(" ", "") or 0)
             except ValueError:
                 prix_actuel = 0
             if not prix_actuel:
                 self.e_prix.delete(0, tk.END)
-                self.e_prix.insert(0, f"{p['prix_achat']:.0f}")
+                self.e_prix.insert(0, f"{p.get('prix_achat', 0):.0f}")
 
     def valider(self) -> None:
         p = self._produit_selectionne()
         if not p:
-            messagebox.showerror("Erreur", "Sélectionnez un produit dans la liste.",
+            messagebox.showerror("Erreur", "Veuillez sélectionner un produit dans la liste.",
                                  parent=self.dialog)
             return
         try:
-            qte = int(float(self.e_qte.get().replace(",", ".")))
-            prix = float(self.e_prix.get().replace(",", ".") or 0)
+            qte_txt = self.e_qte.get().replace(" ", "").replace(",", ".").strip() if hasattr(self, 'e_qte') else "1"
+            qte = int(float(qte_txt or 1))
+            if qte <= 0:
+                qte = 1
         except ValueError:
-            messagebox.showerror("Erreur", "Quantité ou prix invalide.", parent=self.dialog)
+            messagebox.showerror("Erreur", "La quantité doit être un nombre entier positif.", parent=self.dialog)
             return
 
+        try:
+            prix_txt = self.e_prix.get().replace(" ", "").replace(",", ".").strip() if hasattr(self, 'e_prix') else "0"
+            prix = float(prix_txt or 0)
+        except ValueError:
+            prix = 0.0
+
+        doc_txt = self.e_doc.get().strip() if hasattr(self, 'e_doc') else ""
+        notes_txt = self.e_notes.get().strip() if hasattr(self, 'e_notes') else ""
+
         if self.type_mvt == "transfert":
-            cible = self.var_dir.get()
+            cible = self.var_dir.get() if hasattr(self, 'var_dir') else "vente"
             ok, msg = db.add_mouvement(p["id"], "transfert", qte, 0,
-                                       self.e_doc.get().strip(),
-                                       self.e_notes.get().strip(),
-                                       cible=cible)
+                                       doc_txt, notes_txt, cible=cible)
         else:
-            cible = self.var_emp.get()
+            cible = self.var_emp.get() if hasattr(self, 'var_emp') else "vente"
             ok, msg = db.add_mouvement(p["id"], self.type_mvt, qte, prix,
-                                       self.e_doc.get().strip(),
-                                       self.e_notes.get().strip(),
-                                       cible=cible)
+                                       doc_txt, notes_txt, cible=cible)
         if ok:
             self.result = msg
             self.dialog.destroy()
         else:
-            messagebox.showerror("Impossible", msg, parent=self.dialog)
+            if self.type_mvt == "transfert" and "insuffisant" in msg.lower():
+                direction = self.var_dir.get() if hasattr(self, 'var_dir') else "vente"
+                source_nom = "Réserve (Entrepôt)" if direction == "vente" else "Rayon (Vente)"
+                msg_detail = (f"❌ Transfert impossible !\n\n"
+                              f"Le stock en {source_nom} pour « {p.get('nom','')} » est insuffisant (disponible : {p.get('stock_reserve' if direction=='vente' else 'stock_vente', 0)}).\n\n"
+                              f"💡 Pour approvisionner la réserve, faites d'abord une « 📥 Entrée de stock » avec l'emplacement Réserve.")
+                messagebox.showwarning("Stock Source Vide", msg_detail, parent=self.dialog)
+            else:
+                messagebox.showerror("Impossible", msg, parent=self.dialog)
 
 
 
@@ -171,8 +208,7 @@ class DialogueMouvement(DialogueBase):
 class DialoguePaiement(DialogueBase):
     '''Encaissement : prix reel par ligne, negociation article par article.'''
 
-    MODES = ["Especes", "Orange Money", "Wave", "MTN Money", "Moov Money",
-             "Carte bancaire", "Virement", "Cheque", "Credit"]
+    MODES = ["Espèces", "Wave", "Orange Money", "MTN Money", "Moov Money", "Crédit"]
 
     def __init__(self, parent, sous_total, items, clients=None) -> None:
         n_lignes = len(items)
@@ -459,7 +495,7 @@ class DemanderMontant(simpledialog.Dialog):
     """Petite boîte de dialogue : montant + mode de paiement + référence."""
 
     def __init__(self, parent, titre, message, montant_max=None,
-                 modes=("Espèces", "Wave", "Orange Money", "MTN Money", "Virement", "Chèque")):
+                 modes=("Espèces", "Wave", "Orange Money", "MTN Money", "Moov Money", "Crédit")):
         self.message = message
         self.montant_max = montant_max
         self.modes = modes
@@ -522,12 +558,13 @@ class DemanderMontant(simpledialog.Dialog):
 # ═══════════════════════════════════════════════════════
 
 class DialoguePaiementSimple(DialogueBase):
-    """Enregistrement de vente — registre, pas caisse. Prix vendu + mode. Client implicite."""
+    """Enregistrement de vente — enregistrement rapide. Prix vendu + mode + client."""
 
-    MODES = ["Espèces", "Wave", "Orange Money", "Crédit"]
+    MODES = ["Espèces", "Wave", "Orange Money", "MTN Money", "Moov Money", "Crédit"]
 
     def __init__(self, parent, sous_total, items, clients=None) -> None:
-        super().__init__(parent, "Enregistrer une vente", 360, 330)
+        super().__init__(parent, "Enregistrer une vente", 500, 580)
+        self.dialog.minsize(480, 560)
         self.items = items
         self.clients = clients or []
         self.devise = db.get_devise()
@@ -544,51 +581,89 @@ class DialoguePaiementSimple(DialogueBase):
                  fg=COULEURS["text"]).pack(anchor="w")
         tk.Label(f, text=f"Total catalogue : {fmt_money(sous_total, self.devise)}",
                  font=(POLICE, 9), bg=COULEURS["bg"],
-                 fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(0, 16))
+                 fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(0, 6))
 
         # ── Prix vendu ──
-        tk.Label(f, text="Prix vendu", font=(POLICE, 11, "bold"),
+        tk.Label(f, text="Prix vendu net (F CFA)", font=(POLICE, 11, "bold"),
                  bg=COULEURS["bg"], fg=COULEURS["primary"]).pack(anchor="w")
-        self.e_prix_vendu = tk.Entry(f, font=(POLICE, 22, "bold"), width=12,
+        self.e_prix_vendu = tk.Entry(f, font=(POLICE, 18, "bold"), width=14,
                                      bd=2, relief=tk.SOLID, justify="center",
                                      bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
                                      insertbackground=COULEURS["input_fg"])
         self.e_prix_vendu.insert(0, str(int(sous_total)))
-        self.e_prix_vendu.pack(pady=(2, 0), ipady=6)
+        self.e_prix_vendu.pack(pady=(2, 0), ipady=4)
         self.e_prix_vendu.select_range(0, tk.END)
         self.e_prix_vendu.focus_set()
 
         # ── Alerte sous le coût ──
         self.lbl_alerte = tk.Label(f, text="", font=(POLICE, 9),
                                    bg=COULEURS["bg"], fg=COULEURS["danger"])
-        self.lbl_alerte.pack(anchor="w", pady=(6, 0))
+        self.lbl_alerte.pack(anchor="w", pady=(2, 0))
         self.e_prix_vendu.bind("<KeyRelease>", lambda e: self._maj_alerte())
 
         # ── Mode de paiement ──
-        tk.Label(f, text="Mode de paiement", font=(POLICE, 10),
-                 bg=COULEURS["bg"], fg=COULEURS["text"]).pack(anchor="w", pady=(14, 2))
-        self.cb_mode = ttk.Combobox(f, state="readonly", font=(POLICE, 11),
-                                    values=self.MODES, width=16)
+        tk.Label(f, text="Mode de paiement :", font=(POLICE, 10, "bold"),
+                 bg=COULEURS["bg"], fg=COULEURS["text"]).pack(anchor="w", pady=(8, 2))
+        self.cb_mode = ttk.Combobox(f, state="readonly", font=(POLICE, 10),
+                                    values=self.MODES, width=24)
         self.cb_mode.current(0)
-        self.cb_mode.pack(anchor="w")
+        self.cb_mode.pack(anchor="w", ipady=2)
         self.cb_mode.bind("<<ComboboxSelected>>", lambda e: self._maj_ui())
 
-        # ── Client (visible uniquement en crédit) ──
-        self._etiq_clients = {c["nom"] + (" · " + c["telephone"] if c.get("telephone") else ""): c
-                              for c in self.clients}
+        # ── Client (Toujours accessible & obligatoire en crédit) ──
+        self._etiq_clients = {
+            f"{c['nom']}" + (f" ({c['telephone']})" if c.get('telephone') else ""): c
+            for c in self.clients
+        }
+
         self._frame_client = tk.Frame(f, bg=COULEURS["bg"])
-        tk.Label(self._frame_client, text="Client", font=(POLICE, 10),
-                 bg=COULEURS["bg"], fg=COULEURS["text"]).pack(anchor="w", pady=(10, 2))
-        self.cb_client = ttk.Combobox(self._frame_client, font=(POLICE, 10),
-                                      values=list(self._etiq_clients),
-                                      width=22, state="readonly")
-        if self._etiq_clients:
-            self.cb_client.current(0)
-        self.cb_client.pack(anchor="w")
-        # Caché par défaut (Espèces)
+        self._frame_client.pack(fill=tk.X, pady=(8, 0))
+
+        tk.Label(self._frame_client, text="Client de la vente :", font=(POLICE, 10, "bold"),
+                 bg=COULEURS["bg"], fg=COULEURS["text"]).pack(anchor="w", pady=(0, 2))
+
+        f_cl_input = tk.Frame(self._frame_client, bg=COULEURS["bg"])
+        f_cl_input.pack(fill=tk.X)
+
+        self.cb_client = AutocompleteCombobox(f_cl_input, font=(POLICE, 10))
+        liste_cl = ["Client de passage (Comptant)"] + list(self._etiq_clients.keys())
+        self.cb_client.set_completion_list(liste_cl)
+        self.cb_client.set("Client de passage (Comptant)")
+        self.cb_client.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.cb_client.bind("<<ComboboxSelected>>", lambda e: self._maj_ui())
+
+        Bouton(f_cl_input, "➕ Nouveau Client", "secondary", self._nouveau_client_rapide, petit=True).pack(side=tk.RIGHT, padx=(6, 0))
+
+        self.lbl_credit_warn = tk.Label(self._frame_client, text="", font=(POLICE, 9, "bold"),
+                                        bg=COULEURS["bg"], fg=COULEURS["warning"])
+        self.lbl_credit_warn.pack(anchor="w", pady=(4, 0))
 
         self._maj_alerte()
-        self.boutons("✍️ Enregistrer")
+        self._maj_ui()
+        self.boutons("✍️ Enregistrer la vente")
+
+    def _nouveau_client_rapide(self):
+        nom = simpledialog.askstring("Nouveau client", "Nom complet du client :", parent=self.dialog)
+        if not nom or not nom.strip():
+            return
+        tel = simpledialog.askstring("Nouveau client", f"Téléphone pour « {nom.strip()} » (optionnel) :", parent=self.dialog) or ""
+
+        ok, msg = db.add_client(nom.strip(), tel.strip())
+        if ok:
+            self.clients = db.get_clients()
+            self._etiq_clients = {
+                f"{c['nom']}" + (f" ({c['telephone']})" if c.get('telephone') else ""): c
+                for c in self.clients
+            }
+            liste_cl = ["Client de passage (Comptant)"] + list(self._etiq_clients.keys())
+            self.cb_client.set_completion_list(liste_cl)
+
+            cle = next((k for k, v in self._etiq_clients.items() if v["nom"].lower() == nom.strip().lower()), None)
+            if cle:
+                self.cb_client.set(cle)
+            self._maj_ui()
+        else:
+            messagebox.showerror("Erreur", msg, parent=self.dialog)
 
     def _calculer_cout(self, items):
         total = 0.0
@@ -614,14 +689,35 @@ class DialoguePaiementSimple(DialogueBase):
             self.lbl_alerte.configure(text="")
 
     def _maj_ui(self):
-        if self.cb_mode.get() == "Crédit":
-            self._frame_client.pack(after=self.cb_mode, fill=tk.X, pady=(0, 6))
+        mode = self.cb_mode.get()
+        client = self._client_choisi()
+
+        if mode == "Crédit":
+            if not client:
+                self.lbl_credit_warn.configure(text="⚠️ Vente à crédit exige de sélectionner ou créer un client !", fg=COULEURS["danger"])
+            else:
+                solde = float(client.get("solde_creances", 0) or client.get("dette", 0) or 0)
+                txt = f"Vente à crédit attribuée à « {client['nom']} »"
+                if solde > 0:
+                    txt += f"  ·  ⚠️ Encours actuel : {fmt_money(solde, self.devise)}"
+                self.lbl_credit_warn.configure(text=txt, fg=COULEURS["warning"])
         else:
-            self._frame_client.pack_forget()
+            self.lbl_credit_warn.configure(text="", fg=COULEURS["text_secondary"])
 
     def _client_choisi(self):
         etiquette = self.cb_client.get().strip()
-        return self._etiq_clients.get(etiquette)
+        if not etiquette or etiquette.startswith("Client de passage"):
+            return None
+        if etiquette in self._etiq_clients:
+            return self._etiq_clients[etiquette]
+        # Recherche tolérante par nom ou téléphone
+        for k, v in self._etiq_clients.items():
+            if v["nom"].lower() in etiquette.lower() or etiquette.lower() in k.lower():
+                return v
+        for c in self.clients:
+            if c["nom"].lower() in etiquette.lower() or (c.get("telephone") and c["telephone"] in etiquette):
+                return c
+        return None
 
     def valider(self):
         prix_vendu = self._prix_vendu()

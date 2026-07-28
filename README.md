@@ -1,139 +1,156 @@
 # SODIPAC — Gestion Pièce Auto
 
-Logiciel de gestion de stock, caisse et pilotage commercial pour boutique
-de pièces automobiles. 100 % local, aucun abonnement, aucune connexion
-internet requise.
+Application de gestion commerciale pour pièces automobiles — **caisse, stock, créances, achats, inventaire, analyses**.
 
-**Python 3.11+ · Tkinter · SQLite** — Devise : F CFA — Interface en français.
+![Version](https://img.shields.io/badge/version-3.0-blue)
+![Python](https://img.shields.io/badge/python-3.12-green)
+![Tests](https://img.shields.io/badge/tests-319%20passing-brightgreen)
+![Licence](https://img.shields.io/badge/licence-Propri%C3%A9taire-red)
 
 ---
 
-## Démarrage rapide
+## Fonctionnalités
 
-```bash
-git clone <repo>
-cd GestionPieceAuto
-python main.py
-```
-
-Première connexion : **admin / admin123** (à changer dans Paramètres > Utilisateurs).
-
-Aucune dépendance externe — Tkinter et SQLite sont inclus dans Python.
+| Module | Description |
+|---|---|
+| 🛒 **Caisse** | Vente rapide, recherche live, suggestion client, prix catalogue et négocié, marge temps réel |
+| 📦 **Stock** | Multi-dépôts, CUMP, alertes rupture, mouvements entrée/sortie |
+| 💰 **Créances** | Suivi crédit clients, plafond, règlements, historique |
+| 📋 **Achats** | Commandes fournisseur, réception, décaissements |
+| 🔍 **Inventaire** | Comptage physique, écarts, régularisation |
+| 📊 **Dashboard** | KPIs, courbe CA 7 jours, objectif mensuel, alertes, top ventes |
+| 📈 **Analyse** | Rentabilité, tendances prix, prévisions rupture, saisonnalité |
+| 🚗 **Véhicules** | Recherche par marque/modèle/moteur, fiches techniques |
+| 🔄 **Retours** | Avoirs, remboursement, remise en stock |
+| 📄 **Rapports** | PDF/CSV : ventes, stock, créances, marges, journal |
+| 🧾 **Factures** | Génération PDF avec en-tête boutique personnalisable |
+| ⚙️ **Paramètres** | Boutique, utilisateurs, rôles (vendeur/gérant/superviseur), sauvegardes |
 
 ---
 
 ## Architecture
 
+- **Langage** : Python 3.12
+- **Interface** : Tkinter (thème moderne Azure, responsive)
+- **Base de données** : SQLite (WAL, 23 tables, 3 vues, 33 index)
+- **Architecture** : 18 mixins modulaires, connexion persistante
+- **Déploiement** : Exécutable unique `.exe` via PyInstaller (aucune dépendance)
+- **Tests** : 319 assertions, 8 suites de test, bases jetables
+
 ```
-main.py                   Point d'entrée (connexion → application)
-core.py                   Application (menu, navigation, thème, permissions)
-│
-├── page_dashboard.py     Tableau de bord (KPIs, graphique, alertes)
-├── page_caisse.py        Caisse / POS (scan, panier, encaissement)
-├── page_produits.py      Catalogue produits
-├── page_stock.py         Gestion du stock
-├── page_clients.py       Clients
-├── page_categories.py    Catégories
-├── page_fournisseurs.py  Fournisseurs
-├── page_mouvements.py    Historique des mouvements
-├── page_parametres.py    Administration (entreprise, users, backup)
-├── page_rapports.py      Rapports et historique des ventes
-├── page_aide.py          Aide et documentation
-│
-├── page_creances.py      Créances clients (qui doit quoi)
-├── page_achats.py        Commandes fournisseur, réception, dettes
-├── page_inventaire.py    Inventaire physique, écarts valorisés
-├── page_vehicules.py     Recherche par véhicule, compatibilité
-├── page_depots.py        Multi-dépôt, transferts
-├── page_retours.py       Retours partiels et avoirs
-├── page_previsions.py    Prévisions de rupture, classes ABC
-│
-├── pages_analyse.py      Analyse commerciale (prix, tendances, alertes)
-│
-├── database.py           Accès base de données, schéma, CRUD (65 fonctions)
-├── metier_v3.py          Logique métier (CUMP, créances, achats, inventaire…)
-├── dialogues.py          Boîtes de dialogue (connexion, formulaires, v3)
-├── analyse_prix.py       Analyse des prix pratiqués
-├── factures.py           Génération HTML des factures et tickets
-├── export_pdf.py         Conversion HTML → PDF via navigateur
-├── ui_widgets.py         Thème clair/sombre, widgets réutilisables
-├── schema_v3.py          Migration additive du schéma v3
-├── db_helpers.py         Helpers partagés database ↔ schema_v3
-│
-└── tests/                Tests automatisés (319 assertions, 0 échec)
+main.py → core.py (Application)
+  ├── 18 mixins (page_*.py)
+  ├── dialogues/ (20 classes de dialogues)
+  ├── metier/ (logique métier : CUMP, créances…)
+  ├── database.py (CRUD, exports, sauvegardes)
+  ├── analyse_prix.py (analyse commerciale)
+  ├── factures.py (HTML → PDF)
+  ├── export_pdf.py (Edge headless)
+  └── ui_widgets.py (thème, widgets réutilisables)
 ```
 
-**Pattern :** Chaque écran est un **mixin** — une classe avec uniquement les
-méthodes de son domaine. `Application` hérite de 18 mixins. Pas d'imports
-circulaires.
+---
+
+## Prérequis
+
+- **Python 3.11 ou supérieur** — [Télécharger](https://www.python.org/downloads/)
+  - ⚠️ Cocher **"Add Python to PATH"** lors de l'installation
+- Aucune dépendance externe (Tkinter et SQLite inclus dans Python)
+
+---
+
+## Lancement
+
+Double-cliquer sur **`Lancer_SODIPAC.bat`** (affiche une fenêtre console) ou sur **`Lancer_SODIPAC.vbs`** (lancement silencieux, sans console).
+
+### Déploiement (version compilée)
+
+La version `.exe` est dans le dossier `dist/` :
+```
+dist/
+├── SODIPAC.exe
+├── gestion_piece_auto.db
+└── Lancer.bat
+```
+Copier ces 3 fichiers sur n'importe quel PC Windows — aucun Python requis.
+
+---
+
+## Connexion par défaut
+
+| Utilisateur | Mot de passe | Rôle |
+|---|---|---|
+| `admin` | `admin` | Administrateur (accès complet) |
+
+> ⚠️ **Changer le mot de passe admin dès la première connexion** via Paramètres → Utilisateurs.
 
 ---
 
 ## Rôles et permissions
 
-| Rôle         | Accès                                     |
-|--------------|-------------------------------------------|
-| superviseur  | Tout (admin)                              |
-| gérant       | Caisse, produits, stock, rapports         |
-| vendeur      | Caisse seulement                          |
+| Rôle | Accès |
+|---|---|
+| **Vendeur** | Caisse uniquement |
+| **Gérant** | Caisse + Produits + Stock + Rapports |
+| **Superviseur** | Accès complet + Paramètres + Suppression |
 
 ---
 
 ## Raccourcis clavier
 
-| Touche   | Action              | Touche   | Action            |
-|----------|---------------------|----------|-------------------|
-| F1       | Aide                | F8       | Encaisser         |
-| F2       | Caisse              | F9       | Créances          |
-| F3       | Produits            | F10      | Analyse           |
-| F4       | Stock               | F12      | Tableau de bord   |
-| F5       | Clients             | Ctrl+S   | Sauvegarder       |
-| F6       | Rapports            | Ctrl+N   | Nouveau produit   |
+| Touche | Action |
+|---|---|
+| `F2` | Caisse |
+| `F3` | Produits |
+| `F4` | Stock |
+| `F5` | Clients |
+| `F8` | Encaissement rapide (1 champ prix) |
+| `F9` | Créances |
+| `F10` | Analyse |
+| `F12` | Tableau de bord |
+| `Ctrl+S` | Sauvegarde manuelle |
 
 ---
 
-## Base de données
+## Structure des données
 
-23 tables, 3 vues, 33 index. SQLite en mode WAL, `foreign_keys = ON`.
-
-**Tables principales :** produits (29 colonnes), ventes, ventes_details, clients,
-mouvements_stock, stock_depot, commandes, reglements, inventaires, retours,
-utilisateurs, parametres, journal.
-
-Migration : `database.init_database()` est idempotent et non destructif.
+| Fichier/Dossier | Contenu |
+|---|---|
+| `gestion_piece_auto.db` | Base de données principale |
+| `sauvegardes/` | Sauvegardes automatiques (rotation 30 max) |
+| `exports/` | Exports CSV générés |
+| `factures/` | Factures PDF générées |
+| `rapports/` | Rapports PDF générés |
 
 ---
 
 ## Tests
 
 ```bash
-python test_app.py           # Logique métier v2 (84 assertions)
-python test_v3.py            # Métier v3 (141)
-python test_analyse_prix.py  # Analyse prix et tendances (86)
-python test_critical.py      # Fonctions critiques (8)
-python test_mechant.py       # Tests adversariaux
-python test_ui.py            # Interface v2 headless
-python test_ui_v3.py         # Écrans v3 headless (53)
-python test_ui_analyse.py    # Écran analyse headless (54)
+python test_v3.py          # Métier v3 : CUMP, dépôts, créances (141 assertions)
+python test_app.py         # Métier v2, factures (84 assertions)
+python test_analyse_prix.py # Analyse prix, tendances (86 assertions)
+python test_ui_v3.py       # Interface : 7 écrans (53 assertions)
+python test_ui_analyse.py  # Écran analyse, dialogues, PDF (54 assertions)
+python test_critical.py    # Chemins critiques
 ```
 
-**Total : 319 assertions, 0 échec.** Chaque test utilise une base jetable.
+**Total : 319 assertions, 0 échec.**
 
 ---
 
-## Qualité du code
+## En cas de problème
 
-- ✅ 18 mixins (1 par écran, 100-500 lignes chacun)
-- ✅ Type hints sur les fonctions publiques de database et metier
-- ✅ Aucun `except: pass` silencieux (tout est loggé via traceback)
-- ✅ `_num()` unifié en `parse_float()` (3 duplications supprimées)
-- ✅ `_colonnes()` / `_ajouter_colonne()` partagés via `db_helpers.py`
-- ✅ `pages_v3.py` supprimé (contenu distribué dans les 7 mixins v3)
-- ✅ 0 import circulaire
+1. Fermer et relancer l'application
+2. Si l'erreur persiste, copier le message d'erreur et contacter le support
+3. Restaurer depuis `sauvegardes/` si nécessaire
 
 ---
 
-## Pour les développeurs
+## Licence
 
-Voir [`DEVELOPER.md`](DEVELOPER.md) pour les conventions de code, l'architecture
-détaillée, et comment ajouter un nouvel écran.
+Logiciel propriétaire — © 2026 Mahamoud Diabate. Tous droits réservés.
+
+---
+
+*SODIPAC v3 — Juillet 2026*
