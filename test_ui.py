@@ -184,4 +184,5 @@ app._sur_destruction()
 root.update()
 root.destroy()
 print(f"\n{'='*46}\n{'ECHECS: ' + str(len(erreurs)) if erreurs else 'INTERFACE OK - aucune erreur'}\n{'='*46}")
-sys.exit(1 if erreurs else 0)
+if __name__ == "__main__":
+    sys.exit(1 if erreurs else 0)

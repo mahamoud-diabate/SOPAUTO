@@ -62,6 +62,23 @@ def get_connection() -> sqlite3.Connection:
         _conn_persistante.row_factory = sqlite3.Row
         _conn_persistante.execute("PRAGMA foreign_keys = ON")
         _conn_persistante.execute("PRAGMA journal_mode = WAL")
+        _conn_persistante.execute("PRAGMA synchronous = OFF")
+        _conn_persistante.execute("PRAGMA temp_store = MEMORY")
+        _conn_persistante.execute("PRAGMA cache_size = -256000")  # 256 Mo de RAM de cache
+        _conn_persistante.execute("PRAGMA mmap_size = 268435456")  # Memory-mapped I/O direct en RAM
+        # Index de performance SQL massifs
+        try:
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_produits_ref ON produits(reference)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_produits_nom ON produits(nom)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_produits_cat ON produits(categorie_id)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_ventes_date ON ventes(date_vente)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_ventes_statut ON ventes(statut)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_ventes_client ON ventes(client_id)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_ventes_details_v ON ventes_details(vente_id)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_ventes_details_p ON ventes_details(produit_id)")
+            _conn_persistante.execute("CREATE INDEX IF NOT EXISTS idx_mouvements_p ON mouvements_stock(produit_id)")
+        except Exception:
+            pass
     # Si la connexion a été fermée extérieurement, la recréer
     try:
         _conn_persistante.execute("SELECT 1")
@@ -70,6 +87,10 @@ def get_connection() -> sqlite3.Connection:
         _conn_persistante.row_factory = sqlite3.Row
         _conn_persistante.execute("PRAGMA foreign_keys = ON")
         _conn_persistante.execute("PRAGMA journal_mode = WAL")
+        _conn_persistante.execute("PRAGMA synchronous = OFF")
+        _conn_persistante.execute("PRAGMA temp_store = MEMORY")
+        _conn_persistante.execute("PRAGMA cache_size = -256000")
+        _conn_persistante.execute("PRAGMA mmap_size = 268435456")
     return _conn_persistante
 
 
@@ -661,13 +682,19 @@ def delete_fournisseur(id: int) -> tuple[bool, str]:
 def get_clients(search: str = "") -> list[dict]:
     conn = get_connection()
     base = """SELECT c.*,
-                     (SELECT COUNT(*) FROM ventes v WHERE v.client_id=c.id) AS nb_achats,
-                     (SELECT COALESCE(SUM(v.total),0) FROM ventes v
-                       WHERE v.client_id=c.id AND v.statut!='annulee') AS total_achats,
-                     (SELECT COALESCE(SUM(v.total - v.montant_paye),0) FROM ventes v
-                       WHERE v.client_id=c.id AND v.statut!='annulee'
-                         AND (v.total - v.montant_paye) > 0) AS solde_creances
-              FROM clients c"""
+                     COALESCE(v.nb_achats, 0) AS nb_achats,
+                     COALESCE(v.total_achats, 0) AS total_achats,
+                     COALESCE(v.solde_creances, 0) AS solde_creances
+              FROM clients c
+              LEFT JOIN (
+                  SELECT client_id,
+                         COUNT(*) AS nb_achats,
+                         SUM(CASE WHEN COALESCE(statut,'validee')!='annulee' THEN total ELSE 0 END) AS total_achats,
+                         SUM(CASE WHEN COALESCE(statut,'validee')!='annulee' AND (total - montant_paye) > 0 THEN (total - montant_paye) ELSE 0 END) AS solde_creances
+                  FROM ventes
+                  WHERE client_id IS NOT NULL
+                  GROUP BY client_id
+              ) v ON v.client_id = c.id"""
     if search:
         s = f"%{search}%"
         rows = conn.execute(base + " WHERE c.nom LIKE ? OR c.telephone LIKE ? OR c.vehicule LIKE ?"
@@ -717,7 +744,7 @@ def delete_client(id: int) -> tuple[bool, str]:
 # ─── PRODUITS ────────────────────────────────────────
 
 def get_produits(categorie_id=None, search="", seulement_alertes=False,
-                 fournisseur_id=None, inclure_inactifs=True):
+                 fournisseur_id=None, inclure_inactifs=True, limit=None):
     conn = get_connection()
     query = """\
         SELECT p.*, c.nom AS categorie_nom, f.nom AS fournisseur_nom,
@@ -748,8 +775,11 @@ def get_produits(categorie_id=None, search="", seulement_alertes=False,
         params.extend([s] * 6)
 
     query += " ORDER BY p.nom"
+    if limit:
+        query += " LIMIT ?"
+        params.append(limit)
+
     rows = conn.execute(query, params).fetchall()
-    
     return [dict(r) for r in rows]
 
 
@@ -1565,35 +1595,65 @@ def get_nb_alertes() -> int:
 def get_dashboard_stats() -> dict:
     conn = get_connection()
     q = lambda sql, p=(): conn.execute(sql, p).fetchone()[0]
+    
+    # 1. Synthèse globale des produits en 1 seule requête
+    row_prod = conn.execute("""
+        SELECT 
+            COUNT(CASE WHEN COALESCE(actif,1)=1 THEN 1 END) AS total_produits,
+            COUNT(CASE WHEN COALESCE(actif,1)=0 THEN 1 END) AS produits_inactifs,
+            COALESCE(SUM(stock),0) AS stock_total,
+            COALESCE(SUM(stock_reserve),0) AS stock_reserve,
+            COALESCE(SUM(stock_vente),0) AS stock_vente,
+            COALESCE(SUM(stock*prix_achat),0) AS valeur_stock,
+            COALESCE(SUM(stock_vente*prix_vente),0) AS valeur_stock_vente,
+            COUNT(CASE WHEN stock<=stock_mini AND COALESCE(actif,1)=1 THEN 1 END) AS nb_alertes,
+            COUNT(CASE WHEN stock<=0 AND COALESCE(actif,1)=1 THEN 1 END) AS nb_ruptures
+        FROM produits
+    """).fetchone()
+
+    # 2. Synthèse globale des compteurs simples
+    tot_cat = conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0]
+    tot_fourn = conn.execute("SELECT COUNT(*) FROM fournisseurs").fetchone()[0]
+    tot_cli = conn.execute("SELECT COUNT(*) FROM clients").fetchone()[0]
+
+    # 3. Synthèse globale des ventes en 1 seule requête
+    row_ventes = conn.execute("""
+        SELECT 
+            COALESCE(SUM(CASE WHEN date(date_vente)=date('now','localtime') THEN total ELSE 0 END), 0) AS ventes_aujourdhui,
+            COUNT(CASE WHEN date(date_vente)=date('now','localtime') THEN 1 END) AS nb_ventes_aujourdhui,
+            COALESCE(SUM(CASE WHEN strftime('%Y-%m',date_vente)=strftime('%Y-%m','now','localtime') THEN total ELSE 0 END), 0) AS ventes_mois
+        FROM ventes
+        WHERE COALESCE(statut,'validee')<>'annulee'
+    """).fetchone()
+
+    # 4. Calcul de la marge du mois
+    marge = conn.execute("""
+        SELECT COALESCE(SUM((vd.prix_unitaire-vd.prix_achat)*vd.quantite),0)
+               - COALESCE((SELECT SUM(remise) FROM ventes
+                           WHERE strftime('%Y-%m',date_vente)=strftime('%Y-%m','now','localtime')
+                             AND COALESCE(statut,'validee')<>'annulee'),0)
+        FROM ventes_details vd JOIN ventes v ON v.id=vd.vente_id
+        WHERE strftime('%Y-%m',v.date_vente)=strftime('%Y-%m','now','localtime')
+          AND COALESCE(v.statut,'validee')<>'annulee'
+    """).fetchone()[0]
+
     stats = {
-        "total_produits": q("SELECT COUNT(*) FROM produits WHERE COALESCE(actif,1)=1"),
-        "produits_inactifs": q("SELECT COUNT(*) FROM produits WHERE COALESCE(actif,1)=0"),
-        "total_categories": q("SELECT COUNT(*) FROM categories"),
-        "total_fournisseurs": q("SELECT COUNT(*) FROM fournisseurs"),
-        "total_clients": q("SELECT COUNT(*) FROM clients"),
-        "stock_total": q("SELECT COALESCE(SUM(stock),0) FROM produits"),
-        "stock_reserve": q("SELECT COALESCE(SUM(stock_reserve),0) FROM produits"),
-        "stock_vente": q("SELECT COALESCE(SUM(stock_vente),0) FROM produits"),
-        "valeur_stock": q("SELECT COALESCE(SUM(stock*prix_achat),0) FROM produits"),
-        "valeur_stock_vente": q("SELECT COALESCE(SUM(stock_vente*prix_vente),0) FROM produits"),
-        "nb_alertes": q("SELECT COUNT(*) FROM produits WHERE stock<=stock_mini AND COALESCE(actif,1)=1"),
-        "nb_ruptures": q("SELECT COUNT(*) FROM produits WHERE stock<=0 AND COALESCE(actif,1)=1"),
-        "ventes_aujourdhui": q("""SELECT COALESCE(SUM(total),0) FROM ventes
-                                  WHERE date(date_vente)=date('now','localtime')
-                                    AND COALESCE(statut,'validee')<>'annulee'"""),
-        "nb_ventes_aujourdhui": q("""SELECT COUNT(*) FROM ventes
-                                     WHERE date(date_vente)=date('now','localtime')
-                                       AND COALESCE(statut,'validee')<>'annulee'"""),
-        "ventes_mois": q("""SELECT COALESCE(SUM(total),0) FROM ventes
-                            WHERE strftime('%Y-%m',date_vente)=strftime('%Y-%m','now','localtime')
-                              AND COALESCE(statut,'validee')<>'annulee'"""),
-        "marge_mois": q("""SELECT COALESCE(SUM((vd.prix_unitaire-vd.prix_achat)*vd.quantite),0)
-                           - COALESCE((SELECT SUM(remise) FROM ventes
-                                       WHERE strftime('%Y-%m',date_vente)=strftime('%Y-%m','now','localtime')
-                                         AND COALESCE(statut,'validee')<>'annulee'),0)
-                           FROM ventes_details vd JOIN ventes v ON v.id=vd.vente_id
-                           WHERE strftime('%Y-%m',v.date_vente)=strftime('%Y-%m','now','localtime')
-                             AND COALESCE(v.statut,'validee')<>'annulee'"""),
+        "total_produits": row_prod["total_produits"],
+        "produits_inactifs": row_prod["produits_inactifs"],
+        "total_categories": tot_cat,
+        "total_fournisseurs": tot_fourn,
+        "total_clients": tot_cli,
+        "stock_total": row_prod["stock_total"],
+        "stock_reserve": row_prod["stock_reserve"],
+        "stock_vente": row_prod["stock_vente"],
+        "valeur_stock": row_prod["valeur_stock"],
+        "valeur_stock_vente": row_prod["valeur_stock_vente"],
+        "nb_alertes": row_prod["nb_alertes"],
+        "nb_ruptures": row_prod["nb_ruptures"],
+        "ventes_aujourdhui": row_ventes["ventes_aujourdhui"],
+        "nb_ventes_aujourdhui": row_ventes["nb_ventes_aujourdhui"],
+        "ventes_mois": row_ventes["ventes_mois"],
+        "marge_mois": marge,
     }
 
     stats["alertes_stock"] = [dict(r) for r in conn.execute(

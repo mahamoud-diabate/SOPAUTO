@@ -94,19 +94,8 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
         root.configure(bg=COULEURS["bg"])
         appliquer_theme(root)
 
-        # Écouteur de redimensionnement dynamique de la fenêtre
-        self._dernier_facteur = 1.0
-
-        def _sur_redim_fenetre(event):
-            if event.widget == self.root:
-                w, h = event.width, event.height
-                if w > 200 and h > 200:
-                    facteur = max(0.85, min(1.25, min(w / 1366.0, h / 768.0)))
-                    if abs(facteur - self._dernier_facteur) > 0.08:
-                        self._dernier_facteur = facteur
-                        appliquer_theme(self.root, factor=facteur)
-
-        root.bind("<Configure>", _sur_redim_fenetre, add="+")
+        # Écouteur de redimensionnement de la fenêtre désactivé pour éviter le ralentissement Tkinter
+        pass
 
         self.page_courante = None
         self._apres_planifies = set()
@@ -587,9 +576,15 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
 
     def _nouvelle_page(self, titre, index_menu):
         for w in self.zone.winfo_children():
-            w.destroy()
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
         for w in self.zone_actions.winfo_children():
-            w.destroy()
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
         self.lbl_titre.configure(text=titre)
 
         for i, row in enumerate(self.boutons_menu):

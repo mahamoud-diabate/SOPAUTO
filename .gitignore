@@ -1,35 +1,17 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# Données réelles de l'entreprise — JAMAIS sur GitHub
+*.db
+*.db-wal
+*.db-shm
+*.db.backup-*
+sauvegardes/
+sauvegardes_test/
+exports/
+factures/
+test_*.db
 
-# Distribution / packaging
+# Builds & caches
 dist/
 build/
-*.spec
-
-# SQLite WAL temporaire
-*.db-shm
-*.db-wal
-
-# Fichiers de test et dev
-test_*.py
-test_*.db
-audit_*.py
-seed_*.py
-reset_database_clean.py
-analyse_prix.py
-*_screenshot.png
-capture_*.png
-sauvegardes_test*/
-
-# Outils de dev
+__pycache__/
+*.pyc
 .pytest_cache/
-.venv/
-venv/
-RAPPORT_COMPLET_SODIPAC.md
-DEVELOPER.md
-
-# IDE
-.vscode/
-.idea/

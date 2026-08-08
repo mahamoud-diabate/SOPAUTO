@@ -422,13 +422,22 @@ class DashboardMixin:
 
 
     def _panneau_alertes_commerciales(self):
-        """Bandeau des signaux prix / tendances, cliquable vers l'écran Analyse."""
+        """Bandeau des signaux prix / tendances (avec cache léger)."""
         if not self.peut("rapports"):
             return
-        try:
+        now = datetime.now()
+        if hasattr(self, "_cache_alertes_comm") and hasattr(self, "_time_alertes_comm"):
+            if (now - self._time_alertes_comm).total_seconds() < 300:
+                alertes = self._cache_alertes_comm
+            else:
+                alertes = analyse_prix.alertes_commerciales(30)
+                self._cache_alertes_comm = alertes
+                self._time_alertes_comm = now
+        else:
             alertes = analyse_prix.alertes_commerciales(30)
-        except Exception:
-            return
+            self._cache_alertes_comm = alertes
+            self._time_alertes_comm = now
+
         if not alertes:
             return
 

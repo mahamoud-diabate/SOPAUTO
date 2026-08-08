@@ -185,4 +185,6 @@ check("bon reappro HTML", os.path.getsize(p_rea) > 500)
 
 print(f"\n{'='*46}\nRESULTAT : {ok} reussis, {fail} echoues\n{'='*46}")
 shutil.rmtree(TMP, ignore_errors=True)
-sys.exit(1 if fail else 0)
+if __name__ == "__main__":
+    sys.exit(1 if fail else 0)
+

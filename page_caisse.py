@@ -543,14 +543,7 @@ class CaisseMixin:
                     stock_txt += f" (📦 Résérve: {sr})"
 
                 prix_cat = float(p["prix_vente"])
-
-                # Consulter s'il y a un dernier prix négocié pour ce client
-                dernier_prix_info = db.get_dernier_prix_client(p["id"], client_id=client_id, client_nom=client_nom)
-
                 txt_ligne = f" {p['nom'][:30]:<30} │ Cat: {fmt_money(prix_cat, self.devise)} │ {stock_txt}"
-                if dernier_prix_info:
-                    txt_ligne += f"  ★ Hist: {fmt_money(dernier_prix_info['prix'], self.devise)}"
-
                 lb.insert(tk.END, txt_ligne)
 
     def _focus_listbox(self, event=None):
