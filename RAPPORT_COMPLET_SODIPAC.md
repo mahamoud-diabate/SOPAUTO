@@ -7,7 +7,7 @@
 |:---|---|
 | **Projet** | `C:\Users\diaba\GestionPieceAuto` |
 | **Stack** | Python 3.11 · Tkinter · SQLite (aucune dépendance externe) |
-| **Dépôt** | https://github.com/KING2MO123/SODIPAC |
+| **Dépôt** | https://github.com/mahamoud-diabate/SODIPAC |
 | **État** | Fonctionnel — standalone `.exe` (12 Mo) |
 
 ---
@@ -537,7 +537,7 @@ sauvegarde automatique Google Drive + script de lecture seule, mini serveur Flas
 |---|---|
 | `dist/SODIPAC.exe` | 12 Mo — standalone, 0 dépendance, rebuild 25/07 |
 | Base vierge | admin/admin123, 5 produits démo, 10 catégories |
-| GitHub | https://github.com/KING2MO123/SODIPAC |
+| GitHub | https://github.com/mahamoud-diabate/SODIPAC |
 | Tests | 319 assertions, 0 échec (8 suites) |
 | Architecture | 18 mixins + 4 packages (db, metier, dialogues, racine) |
 | Qualité | 0 `except: pass` silencieux, 0 duplication, 0 import circulaire |
