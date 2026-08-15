@@ -2,6 +2,9 @@
 SODIPAC - Test d'Stress Aggressif et Simulation Utilisateur Débutant / Non-Expert
 Simule des saisies chaotiques, erreurs de manipulation, doubles clics et cas limites.
 """
+
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
 import os, tempfile
 TMP_DB = os.path.join(tempfile.gettempdir(), "test_stress_debutant.db")
 for s in ("", "-wal", "-shm"):

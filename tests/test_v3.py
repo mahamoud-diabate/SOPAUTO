@@ -10,6 +10,9 @@ Teste sur une base JETABLE (test_v3.db) :
 Lancement :  python test_v3.py
 """
 
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
+
 import os
 import sys
 import sqlite3

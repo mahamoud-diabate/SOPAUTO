@@ -1,4 +1,7 @@
 """Tests agressifs - testeur méchant. Chaque test prouve/réfute un bug suspecté."""
+
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
 import os, sqlite3, sys, tempfile
 
 TMP = tempfile.mkdtemp()

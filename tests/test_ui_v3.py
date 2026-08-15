@@ -9,6 +9,9 @@ intervention humaine.
 Lancement :  python test_ui_v3.py
 """
 
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
+
 import os
 import sys
 import traceback

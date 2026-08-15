@@ -8,6 +8,9 @@ exerce chaque onglet, filtre et dialogue.
 Lancement :  python test_ui_analyse.py
 """
 
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
+
 import os
 import sys
 import traceback

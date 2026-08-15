@@ -15,6 +15,9 @@ calculs disent la vérité :
 Lancement :  python test_analyse_prix.py
 """
 
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
+
 import os
 import sys
 from datetime import datetime, timedelta

@@ -111,18 +111,31 @@ CUMP = (stock_avant × cump_avant + qté_entrée × prix_entrée) / (stock_avant
 
 ## Tests
 
+Tout vit dans `tests/`. Chaque fichier reste un script autonome (aucun framework
+externe) et commence par `import _bootstrap`, qui ajoute la racine du projet au
+`sys.path` et force la sortie console en UTF-8.
+
+```bash
+python tests/run_all.py          # les 4 suites, avec le total
+python tests/run_all.py --ui     # + les tests d'interface (ouvrent des fenêtres)
+```
+
 | Fichier | Portée | Assertions |
 |---|---|---|
-| `test_app.py` | Métier v2, factures HTML | 84 |
-| `test_v3.py` | CUMP, dépôts, créances, achats, inventaire, retours | 141 |
-| `test_analyse_prix.py` | Prix pratiqués, tendances, alertes | 86 |
-| `test_critical.py` | _sync_cloud, _maj_cump, régression except:pass | 8 |
-| `test_mechant.py` | Tests adversariaux | — |
-| `test_ui.py` | Interface v2 headless | — |
-| `test_ui_v3.py` | 7 écrans v3 + non-régression | 53 |
-| `test_ui_analyse.py` | Écran analyse, dialogues, PDF | 54 |
+| `tests/test_app.py` | Métier v2, factures HTML | 84 |
+| `tests/test_v3.py` | CUMP, dépôts, créances, achats, inventaire, retours | 141 |
+| `tests/test_analyse_prix.py` | Prix pratiqués, tendances, alertes | 86 |
+| `tests/test_critical.py` | _sync_cloud, _maj_cump, régression except:pass | 8 |
+| `tests/test_mechant.py` | Tests adversariaux | — |
+| `tests/test_ui.py` | Interface v2 headless | — |
+| `tests/test_ui_v3.py` | 7 écrans v3 + non-régression | 53 |
+| `tests/test_ui_analyse.py` | Écran analyse, dialogues, PDF | 54 |
 
 **Total : 319 assertions, 0 échec.** Chaque test utilise une base jetable.
+
+Les suites `test_ui*` nécessitent `customtkinter` et `PyQt6` (`pip install -r
+requirements.txt`) ; `run_all.py` les exclut par défaut pour rester lançable
+sans interface graphique.
 
 ### Pattern de test
 

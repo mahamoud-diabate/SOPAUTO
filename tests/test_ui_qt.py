@@ -1,6 +1,9 @@
 """
 SODIPAC - Test de validation des 18 modules PyQt6
 """
+
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
 import sys
 import database as db
 from PyQt6.QtWidgets import QApplication

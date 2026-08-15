@@ -7,6 +7,9 @@ Chaque test utilise une base jetable (DB_PATH redirigé) et nettoie après.
 
 Lancement : python test_critical.py
 """
+
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
 import os
 import sys
 import shutil
@@ -212,7 +215,8 @@ def test_regression_aucun_except_pass_silencieux():
     pattern = "except Exception:\n            pass"
     
     for fname in fichiers:
-        fpath = os.path.join(BASE, fname)
+        # Le code source est à la racine du projet, pas dans tests/.
+        fpath = os.path.join(_bootstrap.RACINE, fname)
         with open(fpath, encoding="utf-8") as f:
             contenu = f.read()
         

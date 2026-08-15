@@ -2,6 +2,9 @@
 SODIPAC - Audit Mathématique & Vérification d'Exactitude des Calculs
 Vérifie 100% des formules mathématiques, marges, CUMP, taxes, remises et agrégations.
 """
+
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
 import database as db
 from ui_widgets import parse_float
 import sys

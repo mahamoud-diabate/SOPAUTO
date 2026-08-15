@@ -1,4 +1,7 @@
 """Tests fonctionnels du module database (exécution réelle sur une base temporaire)."""
+
+import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
+
 import os, sys, shutil, tempfile, traceback
 
 TMP = tempfile.mkdtemp(prefix="sodipac_test_")
