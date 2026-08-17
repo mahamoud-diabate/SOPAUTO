@@ -1,4 +1,6 @@
 @echo off
 title SODIPAC — Gestion Piece Auto
-cd /d "C:\Users\diaba\GestionPieceAuto"
-python main.py
+cd /d "%~dp0"
+set "PY_EXE=C:\Users\diaba\AppData\Local\Programs\Python\Python312\python.exe"
+if not exist "%PY_EXE%" set "PY_EXE=python"
+"%PY_EXE%" main.py
