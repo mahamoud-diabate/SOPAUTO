@@ -17,10 +17,11 @@ class PageStockQt(QWidget):
         c = CarteQt("📋 Mouvements & Suivi des Stocks")
         self.tab = TableauTriableQt([
             ("id", "ID", 50, "center"),
-            ("ref", "Référence", 110, "w"),
-            ("nom", "Produit", 220, "w"),
-            ("qte", "Quantité en stock", 120, "center"),
-            ("valeur", "Valeur Totale", 120, "e")
+            ("ref", "Référence", 120, "w"),
+            ("nom", "Produit", 280, "w"),
+            ("qte", "Stock Rayon", 100, "center"),
+            ("mini", "Seuil Mini", 100, "center"),
+            ("valeur", "Valeur Totale", 140, "e")
         ], parent=c)
         c.layout_corps.addWidget(self.tab)
         lyt.addWidget(c)
@@ -30,9 +31,12 @@ class PageStockQt(QWidget):
         self.tab.vider()
         try:
             for p in db.get_produits():
-                valeur = p["quantite"] * p["prix_achat"]
-                self.tab.inserer_ligne([p["id"], p["reference"], p["nom"], p["quantite"], f"{valeur:,.0f} F CFA"],
-                                       ["center", "left", "left", "center", "right"])
+                stock = p.get("stock", p.get("quantite", 0))
+                mini = p.get("stock_mini", p.get("quantite_min", 5))
+                valeur = stock * p.get("prix_achat", 0)
+                self.tab.inserer_ligne([
+                    p["id"], p["reference"], p["nom"], stock, mini, f"{valeur:,.0f} F CFA"
+                ], ["center", "left", "left", "center", "center", "right"])
         except Exception:
             pass
 
@@ -55,10 +59,11 @@ class PageClientsQt(QWidget):
         c = CarteQt("👥 Répertoire des Clients")
         self.tab = TableauTriableQt([
             ("id", "ID", 50, "center"),
-            ("nom", "Nom Complet", 200, "w"),
-            ("tel", "Téléphone", 120, "w"),
-            ("encours", "Encours / Créance", 120, "e"),
-            ("plafond", "Plafond Crédit", 120, "e")
+            ("nom", "Nom Complet", 220, "w"),
+            ("tel", "Téléphone", 140, "w"),
+            ("ville", "Adresse", 160, "w"),
+            ("encours", "Encours / Créance", 130, "e"),
+            ("plafond", "Plafond Crédit", 130, "e")
         ], parent=c)
         self.tab.doubleClicked.connect(self._modifier_client)
         c.layout_corps.addWidget(self.tab)
@@ -70,10 +75,11 @@ class PageClientsQt(QWidget):
         try:
             for cl in db.get_clients():
                 self.tab.inserer_ligne([
-                    cl["id"], cl["nom"], cl["telephone"] or "-",
+                    cl["id"], cl["nom"], cl.get("telephone") or "-",
+                    cl.get("adresse") or "-",
                     f"{cl.get('solde_creance', 0):,.0f} F CFA",
                     f"{cl.get('plafond_credit', 0):,.0f} F CFA"
-                ], ["center", "left", "left", "right", "right"])
+                ], ["center", "left", "left", "left", "right", "right"])
         except Exception:
             pass
 
@@ -111,10 +117,10 @@ class PageCreancesQt(QWidget):
         lyt.setContentsMargins(16, 16, 16, 16)
         c = CarteQt("💳 Suivi des Créances & Encours Clients")
         self.tab = TableauTriableQt([
-            ("client", "Client", 200, "w"),
-            ("tel", "Téléphone", 120, "w"),
-            ("creance", "Solde Dû", 130, "e"),
-            ("plafond", "Plafond", 130, "e")
+            ("client", "Client", 240, "w"),
+            ("tel", "Téléphone", 140, "w"),
+            ("creance", "Solde Dû", 140, "e"),
+            ("plafond", "Plafond", 140, "e")
         ], parent=c)
         c.layout_corps.addWidget(self.tab)
         lyt.addWidget(c)
@@ -124,10 +130,10 @@ class PageCreancesQt(QWidget):
         self.tab.vider()
         try:
             for cl in db.get_clients():
-                solde = cl.get("solde_creance", 0)
+                solde = cl.get("solde_creances", cl.get("solde_creance", 0))
                 if solde > 0:
                     self.tab.inserer_ligne([
-                        cl["nom"], cl["telephone"] or "-", f"{solde:,.0f} F CFA", f"{cl.get('plafond_credit',0):,.0f} F CFA"
+                        cl["nom"], cl.get("telephone") or "-", f"{solde:,.0f} F CFA", f"{cl.get('plafond_credit', 0):,.0f} F CFA"
                     ], ["left", "left", "right", "right"])
         except Exception:
             pass
@@ -141,11 +147,11 @@ class PageRapportsQt(QWidget):
         lyt.setContentsMargins(16, 16, 16, 16)
         c = CarteQt("💹 Historique Ventes & Rapports")
         self.tab = TableauTriableQt([
-            ("fact", "N° Facture", 120, "w"),
-            ("date", "Date", 140, "w"),
-            ("client", "Client", 180, "w"),
-            ("total", "Total Net", 120, "e"),
-            ("mode", "Paiement", 100, "center")
+            ("fact", "N° Facture", 140, "w"),
+            ("date", "Date & Heure", 160, "center"),
+            ("client", "Client", 200, "w"),
+            ("total", "Total Net", 130, "e"),
+            ("mode", "Paiement", 120, "center")
         ], parent=c)
         c.layout_corps.addWidget(self.tab)
         lyt.addWidget(c)
@@ -154,11 +160,14 @@ class PageRapportsQt(QWidget):
     def charger(self):
         self.tab.vider()
         try:
-            ventes = db.get_historique_ventes(limite=50)
+            ventes = db.get_ventes(limit=50)
             for v in ventes:
                 self.tab.inserer_ligne([
-                    v["numero_facture"], v.get("date_vente", "-"), v.get("client_nom", "Client Comptant"),
-                    f"{v['total_net']:,.0f} F CFA", v.get("mode_paiement", "Espèces")
-                ], ["left", "left", "left", "right", "center"])
+                    v.get("numero") or f"VTE-{v['id']}",
+                    v.get("date_vente", "-"),
+                    v.get("client_nom") or "Client Comptant",
+                    f"{v.get('total', 0):,.0f} F CFA",
+                    v.get("mode_paiement") or "Espèces"
+                ], ["left", "center", "left", "right", "center"])
         except Exception:
             pass

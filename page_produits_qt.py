@@ -64,6 +64,9 @@ class PageProduitsQt(QWidget):
 
         self._charger_produits()
 
+    def charger(self):
+        self._charger_produits()
+
     def _charger_produits(self):
         self.tab_produits.vider()
         filtre = self.txt_cherche.text().strip().lower()
@@ -72,16 +75,18 @@ class PageProduitsQt(QWidget):
             for p in prods:
                 if filtre and (filtre not in p["nom"].lower() and filtre not in p["reference"].lower()):
                     continue
+                qte = p.get("stock", p.get("quantite", 0))
+                mini = p.get("stock_mini", p.get("quantite_min", 5))
                 statut = "OK"
-                if p["quantite"] <= 0:
+                if qte <= 0:
                     statut = "🔴 Rupture"
-                elif p["quantite"] <= p["quantite_min"]:
+                elif qte <= mini:
                     statut = "⚠️ Alerte"
 
                 self.tab_produits.inserer_ligne([
                     p["id"], p["reference"], p["nom"], p.get("categorie_nom", "-"),
-                    f"{p['prix_achat']:,.0f} F", f"{p['prix_vente']:,.0f} F",
-                    p["quantite"], statut
+                    f"{p.get('prix_achat', 0):,.0f} F", f"{p.get('prix_vente', 0):,.0f} F",
+                    qte, statut
                 ], ["center", "left", "left", "left", "right", "right", "center", "center"])
         except Exception:
             pass

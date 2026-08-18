@@ -3,7 +3,7 @@ SODIPAC - Page Dashboard PyQt6
 """
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, QFrame, QHeaderView
 )
 import database as db
 from ui_qt import CarteQt, TableauTriableQt, BoutonQt, PALETTES_QT, THEME_ACTUEL
@@ -33,12 +33,12 @@ class PageDashboardQt(QWidget):
         grid_kpi.setSpacing(12)
 
         kpis = [
-            ("CA Aujourd'hui", f"{s.get('ca_aujourdhui', 0):,.0f} F CFA", "#4f46e5"),
+            ("CA Aujourd'hui", f"{s.get('ventes_aujourdhui', 0):,.0f} F CFA", "#4f46e5"),
             ("Ventes du jour", str(s.get("nb_ventes_aujourdhui", 0)), "#059669"),
-            ("Stock Total", f"{s.get('total_produits', 0)} articles", "#0284c7"),
+            ("Stock Total", f"{s.get('stock_total', 0)} articles", "#0284c7"),
             ("Valeur du Stock", f"{s.get('valeur_stock', 0):,.0f} F CFA", "#d97706"),
             ("Alertes Stock", str(s.get("nb_alertes", 0)), "#dc2626"),
-            ("Créances Clients", f"{s.get('total_creances', 0):,.0f} F CFA", "#7c3aed"),
+            ("Marge du Mois", f"{s.get('marge_mois', 0):,.0f} F CFA", "#7c3aed"),
         ]
 
         for i, (titre, val, couleur) in enumerate(kpis):
@@ -71,16 +71,17 @@ class PageDashboardQt(QWidget):
         # Alertes
         c_alertes = CarteQt("⚠️ Alertes de stock")
         tab_alertes = TableauTriableQt([
-            ("ref", "Réf.", 80, "w"),
-            ("nom", "Produit", 150, "w"),
+            ("ref", "Réf.", 90, "w"),
+            ("nom", "Produit", 180, "w"),
             ("qte", "Stock", 60, "center"),
             ("mini", "Mini", 60, "center")
         ], parent=c_alertes)
+        tab_alertes.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         
         try:
-            prods = db.get_produits_alertes()
+            prods = db.get_produits(seulement_alertes=True)
             for p in prods[:10]:
-                tab_alertes.inserer_ligne([p["reference"], p["nom"], p["quantite"], p["quantite_min"]],
+                tab_alertes.inserer_ligne([p["reference"], p["nom"], p["stock"], p["stock_mini"]],
                                           ["left", "left", "center", "center"])
         except Exception:
             pass
@@ -91,16 +92,23 @@ class PageDashboardQt(QWidget):
         # Ventes récentes
         c_ventes = CarteQt("📝 Dernières ventes")
         tab_ventes = TableauTriableQt([
-            ("num", "Facture", 90, "w"),
-            ("date", "Heure", 100, "w"),
-            ("total", "Total", 90, "e")
+            ("num", "Facture", 120, "w"),
+            ("client", "Client", 160, "w"),
+            ("date", "Heure", 75, "center"),
+            ("total", "Total", 100, "e")
         ], parent=c_ventes)
+        tab_ventes.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
         try:
-            ventes = db.get_historique_ventes(limite=10)
+            ventes = db.get_ventes(limit=10)
             for v in ventes:
-                tab_ventes.inserer_ligne([v["numero_facture"], v.get("date_vente", "")[-8:], f"{v['total_net']:,.0f} F"],
-                                         ["left", "left", "right"])
+                heure = str(v.get("date_vente", ""))[-8:] if v.get("date_vente") else ""
+                tab_ventes.inserer_ligne([
+                    v.get("numero") or f"VTE-{v['id']}",
+                    v.get("client_nom") or "Client",
+                    heure,
+                    f"{v.get('total', 0):,.0f} F"
+                ], ["left", "left", "center", "right"])
         except Exception:
             pass
 
