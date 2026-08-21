@@ -22,18 +22,18 @@ class ProduitsMixin:
     """Catalogue produits — recherche avancée, CRUD, aperçu fiche & import/export."""
 
     def afficher_produits(self, alertes=False):
-        self._nouvelle_page("📦 Catalogue produits & Référentiel", 2)
+        self._nouvelle_page("Catalogue produits & Référentiel", 2)
 
         self._filtre_statut_prod = "tous"  # tous | actifs | inactifs | a_completer
 
         # ── Actions dans l'en-tête de page ──
         if self.peut("produits"):
-            Bouton(self.zone_actions, "➕ Nouveau (Ctrl+N)", "primary",
+            Bouton(self.zone_actions, "Nouveau (Ctrl+N)", "primary",
                    self.nouveau_produit, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📊 Exporter CSV", "info",
+        Bouton(self.zone_actions, "Exporter CSV", "info",
                self._exporter_produits, petit=True).pack(side=tk.LEFT, padx=3)
         if self.peut("admin"):
-            Bouton(self.zone_actions, "📥 Importer CSV", "secondary",
+            Bouton(self.zone_actions, "Importer CSV", "secondary",
                    self._importer_produits, petit=True, outline=True).pack(side=tk.LEFT, padx=3)
 
         # ── Conteneur principal ──
@@ -55,7 +55,7 @@ class ProduitsMixin:
         self.rech_produits.pack(side=tk.LEFT, padx=(0, 10))
 
         # Filtre Catégorie
-        tk.Label(cf, text="Catégorie:", font=(POLICE, 9, "bold"),
+        tk.Label(cf, text="Catégorie:", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT, padx=(4, 2))
 
         self.categories_cache = db.get_categories()
@@ -70,7 +70,7 @@ class ProduitsMixin:
         self.cb_filtre_cat_prod.bind("<Return>", lambda e: self._charger_produits())
 
         # Filtre Marque Véhicule
-        tk.Label(cf, text="Marque:", font=(POLICE, 9, "bold"),
+        tk.Label(cf, text="Marque:", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT, padx=(4, 2))
 
         # Extraire les marques uniques de la base
@@ -95,10 +95,10 @@ class ProduitsMixin:
         self.btn_stat_inactifs = Bouton(f_pilules, "Inactifs", "secondary", lambda: self._changer_statut_filtre("inactifs"), petit=True, outline=True)
         self.btn_stat_inactifs.pack(side=tk.LEFT, padx=2)
 
-        self.btn_stat_completer = Bouton(f_pilules, "📝 À compléter", "warning", lambda: self._changer_statut_filtre("a_completer"), petit=True, outline=True)
+        self.btn_stat_completer = Bouton(f_pilules, "À compléter", "warning", lambda: self._changer_statut_filtre("a_completer"), petit=True, outline=True)
         self.btn_stat_completer.pack(side=tk.LEFT, padx=2)
 
-        self.lbl_resume_produits = tk.Label(cf, text="", font=(POLICE, 9, "bold"),
+        self.lbl_resume_produits = tk.Label(cf, text="", font=(POLICE, 9),
                                             bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_resume_produits.pack(side=tk.RIGHT, padx=6)
 
@@ -130,12 +130,12 @@ class ProduitsMixin:
 
         # Menu contextuel clic droit
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="✏️  Modifier la fiche (Double-clic)", command=self.modifier_produit)
-        menu.add_command(label="📥  Entrée de stock...", command=lambda: self._mouvement_produit("entree"))
-        menu.add_command(label="📤  Sortie de stock...", command=lambda: self._mouvement_produit("sortie"))
-        menu.add_command(label="🔄  Transfert réserve ↔ rayon...", command=lambda: self._mouvement_produit("transfert"))
+        menu.add_command(label="Modifier la fiche (Double-clic)", command=self.modifier_produit)
+        menu.add_command(label="Entrée de stock...", command=lambda: self._mouvement_produit("entree"))
+        menu.add_command(label="Sortie de stock...", command=lambda: self._mouvement_produit("sortie"))
+        menu.add_command(label="Transfert réserve ↔ rayon...", command=lambda: self._mouvement_produit("transfert"))
         menu.add_separator()
-        menu.add_command(label="🗑️  Supprimer / Désactiver", command=self.supprimer_produit)
+        menu.add_command(label="Supprimer / Désactiver", command=self.supprimer_produit)
 
         def clic_droit(e):
             iid = self.tab_produits.identify_row(e.y)
@@ -146,7 +146,7 @@ class ProduitsMixin:
         self.tab_produits.bind("<Button-3>", clic_droit)
 
         # --- Section 4 : Volet d'Aperçu Fiche Produit (Panneau bas) ---
-        self.carte_apercu = Carte(grille, "ℹ️ Aperçu & Fiche Technique Article")
+        self.carte_apercu = Carte(grille, "ℹ Aperçu & Fiche Technique Article")
         self.carte_apercu.pack(fill=tk.X)
         ca = self.carte_apercu.corps
 
@@ -186,10 +186,10 @@ class ProduitsMixin:
         a_completer = sum(1 for p in prods if not p.get("reference") or p["reference"].startswith("PRD-TMP-") or not p.get("marque") or not p.get("prix_achat"))
 
         kpis_data = [
-            ("📦", f"{total_fiches} fiches", f"{actifs} actives · {inactifs} inactives", COULEURS["primary"]),
-            ("🚗", f"{marques} marque(s)", "Equipementiers & Constructeurs", COULEURS["info"]),
-            ("📈", f"{marge_moy:.1f} %", "Marge catalogue moyenne", COULEURS["success"]),
-            ("📝", f"{a_completer} à compléter", "Référence ou prix manquant", COULEURS["warning"] if a_completer > 0 else COULEURS["success"]),
+            ("", f"{total_fiches} fiches", f"{actifs} actives · {inactifs} inactives", COULEURS["primary"]),
+            ("", f"{marques} marque(s)", "Equipementiers & Constructeurs", COULEURS["info"]),
+            ("", f"{marge_moy:.1f} %", "Marge catalogue moyenne", COULEURS["success"]),
+            ("", f"{a_completer} à compléter", "Référence ou prix manquant", COULEURS["warning"] if a_completer > 0 else COULEURS["success"]),
         ]
 
         for i, (icone, val, label, coul) in enumerate(kpis_data):
@@ -275,14 +275,14 @@ class ProduitsMixin:
         col1 = tk.Frame(ca, bg=COULEURS["card"])
         col1.grid(row=0, column=0, sticky="nsew", padx=8)
 
-        tk.Label(col1, text=f"📌 {produit['nom']}", font=(POLICE, 11, "bold"),
+        tk.Label(col1, text=f"{produit['nom']}", font=(POLICE, 12, "bold"),
                  bg=COULEURS["card"], fg=COULEURS["text"]).pack(anchor="w")
         tk.Label(col1, text=f"Réf: {produit['reference']}  ·  Marque: {produit.get('marque') or 'N/A'}",
                  font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(2, 4))
         tk.Label(col1, text=f"Code OEM / Barres: {produit.get('code_barres') or 'Non renseigné'}",
                  font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w")
         tk.Label(col1, text=f"Emplacement: {produit.get('emplacement') or 'Rayon A1'}",
-                 font=(POLICE, 9, "bold"), bg=COULEURS["card"], fg=COULEURS["primary"]).pack(anchor="w", pady=(2, 0))
+                 font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["primary"]).pack(anchor="w", pady=(2, 0))
 
         # Colonne 2 : Analyse financière (CUMP vs Prix Vente)
         col2 = tk.Frame(ca, bg=COULEURS["card"])
@@ -294,7 +294,7 @@ class ProduitsMixin:
         marge = pv - cump
         marge_pct = (marge / pv * 100) if pv > 0 else 0
 
-        tk.Label(col2, text="💰 Tarification & Rentabilité", font=(POLICE, 10, "bold"),
+        tk.Label(col2, text="Tarification & Rentabilité", font=(POLICE, 10, "bold"),
                  bg=COULEURS["card"], fg=COULEURS["text"]).pack(anchor="w")
         tk.Label(col2, text=f"Prix Achat / CUMP : {fmt_money(cump, self.devise)}",
                  font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w")
@@ -303,14 +303,14 @@ class ProduitsMixin:
         
         lbl_m = f"Marge brute : {fmt_money(marge, self.devise)} ({marge_pct:.1f}%)"
         coul_m = COULEURS["success"] if marge > 0 else COULEURS["danger"]
-        tk.Label(col2, text=lbl_m, font=(POLICE, 9, "bold"),
+        tk.Label(col2, text=lbl_m, font=(POLICE, 9),
                  bg=COULEURS["card"], fg=coul_m).pack(anchor="w", pady=(2, 0))
 
         # Colonne 3 : Stock & Actions rapides
         col3 = tk.Frame(ca, bg=COULEURS["card"])
         col3.grid(row=0, column=2, sticky="nsew", padx=8)
 
-        tk.Label(col3, text="📦 État du Stock", font=(POLICE, 10, "bold"),
+        tk.Label(col3, text="État du Stock", font=(POLICE, 10, "bold"),
                  bg=COULEURS["card"], fg=COULEURS["text"]).pack(anchor="w")
         stk_txt = f"Stock Vente: {produit.get('stock_vente', 0)}  ·  Réserve: {produit.get('stock_reserve', 0)} (Total: {produit.get('stock', 0)})"
         tk.Label(col3, text=stk_txt, font=(POLICE, 9),
@@ -318,8 +318,8 @@ class ProduitsMixin:
 
         btn_box = tk.Frame(col3, bg=COULEURS["card"])
         btn_box.pack(anchor="w")
-        Bouton(btn_box, "✏️ Modifier", "primary", self.modifier_produit, petit=True).pack(side=tk.LEFT, padx=(0, 4))
-        Bouton(btn_box, "📥 Entrée", "success", lambda: self._mouvement_produit("entree"), petit=True).pack(side=tk.LEFT, padx=2)
+        Bouton(btn_box, "Modifier", "primary", self.modifier_produit, petit=True).pack(side=tk.LEFT, padx=(0, 4))
+        Bouton(btn_box, "Entrée", "success", lambda: self._mouvement_produit("entree"), petit=True).pack(side=tk.LEFT, padx=2)
 
     def _produit_selectionne(self):
         sel = self.tab_produits.selection()
@@ -357,7 +357,7 @@ class ProduitsMixin:
                                f"Voulez-vous supprimer ou désactiver « {p['nom']} » ?", parent=self.root):
             ok, msg = db.delete_produit(pid)
             if ok:
-                self.statut(f"✅ {msg}", COULEURS["success"])
+                self.statut(f"{msg}", COULEURS["success"])
                 self._charger_produits()
             else:
                 messagebox.showerror("Erreur", msg, parent=self.root)
@@ -384,7 +384,7 @@ class ProduitsMixin:
             return
         ok, msg = db.import_produits_csv(fichier)
         if ok:
-            self.statut(f"✅ {msg}", COULEURS["success"])
+            self.statut(f"{msg}", COULEURS["success"])
             self._charger_produits()
         else:
             messagebox.showerror("Erreur import", msg, parent=self.root)

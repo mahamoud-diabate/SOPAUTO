@@ -19,17 +19,17 @@ class AchatsMixin:
     def afficher_achats(self):
         if not self.peut("stock"):
             return self._refus()
-        self._nouvelle_page("🛒 Achats — commandes fournisseur", self._idx_menu("Achats"))
+        self._nouvelle_page("Achats — commandes fournisseur", self._idx_menu("Achats"))
 
-        Bouton(self.zone_actions, "➕ Nouvelle commande", "primary",
+        Bouton(self.zone_actions, "Nouvelle commande", "primary",
                self._nouvelle_commande, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📨 Marquer envoyée", "info",
+        Bouton(self.zone_actions, "Marquer envoyée", "info",
                self._envoyer_commande, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📥 Réceptionner", "success",
+        Bouton(self.zone_actions, "Réceptionner", "success",
                self._receptionner_commande, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "💸 Payer", "warning",
+        Bouton(self.zone_actions, "Payer", "warning",
                self._payer_fournisseur, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "✕ Annuler", "danger",
+        Bouton(self.zone_actions, "Annuler", "danger",
                self._annuler_commande, petit=True).pack(side=tk.LEFT, padx=3)
 
         barre = tk.Frame(self.zone, bg=COULEURS["bg"])
@@ -41,7 +41,7 @@ class AchatsMixin:
         self.filtre_cmd.current(0)
         self.filtre_cmd.pack(side=tk.LEFT, padx=(4, 14))
         self.filtre_cmd.bind("<<ComboboxSelected>>", lambda e: self._charger_commandes())
-        self.lbl_resume_cmd = tk.Label(barre, text="", font=(POLICE, 9, "bold"),
+        self.lbl_resume_cmd = tk.Label(barre, text="", font=(POLICE, 9),
                                        bg=COULEURS["bg"], fg=COULEURS["primary"])
         self.lbl_resume_cmd.pack(side=tk.RIGHT, padx=8)
 
@@ -87,9 +87,9 @@ class AchatsMixin:
         statuts = {"Toutes": "", "Brouillon": "brouillon", "Envoyée": "envoyee",
                    "Partielle": "partielle", "Reçue": "recue", "Annulée": "annulee"}
         cmds = m3.get_commandes(statut=statuts.get(self.filtre_cmd.get(), ""))
-        libelles = {"brouillon": "📝 Brouillon", "envoyee": "📨 Envoyée",
-                    "partielle": "📦 Partielle", "recue": "✅ Reçue",
-                    "annulee": "❌ Annulée"}
+        libelles = {"brouillon": "Brouillon", "envoyee": "Envoyée",
+                    "partielle": "Partielle", "recue": "Reçue",
+                    "annulee": "Annulée"}
         t = self.tab_commandes
         t.delete(*t.get_children())
         total = 0.0
@@ -134,7 +134,7 @@ class AchatsMixin:
                 texte += (f"\nPayé : {fmt_money(dette['total_paye'], self.devise)}\n"
                           f"RESTE À PAYER : {fmt_money(dette['reste_a_payer'], self.devise)}")
             elif cmd["statut"] in ("recue", "partielle"):
-                texte += "\n✅ Intégralement payée"
+                texte += "\n Intégralement payée"
             if cmd["notes"]:
                 texte += f"\nNotes : {cmd['notes']}"
             self.lbl_cmd_detail.configure(text=texte)

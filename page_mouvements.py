@@ -17,8 +17,8 @@ class MouvementsMixin:
     """
 
     def afficher_mouvements(self, produit_id=None):
-        self._nouvelle_page("📈 Historique des mouvements", 7)
-        Bouton(self.zone_actions, "📤 Exporter CSV", "info",
+        self._nouvelle_page("Historique des mouvements", 7)
+        Bouton(self.zone_actions, "Exporter CSV", "info",
                lambda: self._proposer_ouverture(db.exporter_mouvements()),
                petit=True).pack(side=tk.LEFT, padx=3)
 
@@ -47,12 +47,12 @@ class MouvementsMixin:
         if produit_id:
             p = db.get_produit(produit_id)
             tk.Label(barre, text=f"Produit : {p['nom'] if p else produit_id}",
-                     font=(POLICE, 9, "bold"), bg=COULEURS["bg"],
+                     font=(POLICE, 9), bg=COULEURS["bg"],
                      fg=COULEURS["primary"]).pack(side=tk.LEFT, padx=12)
-            Bouton(barre, "✕ Tous les produits", "secondary",
+            Bouton(barre, "Tous les produits", "secondary",
                    lambda: self.afficher_mouvements(), petit=True).pack(side=tk.LEFT)
 
-        self.lbl_resume_mvt = tk.Label(barre, text="", font=(POLICE, 9, "bold"),
+        self.lbl_resume_mvt = tk.Label(barre, text="", font=(POLICE, 9),
                                        bg=COULEURS["bg"], fg=COULEURS["primary"])
         self.lbl_resume_mvt.pack(side=tk.RIGHT, padx=8)
 
@@ -82,8 +82,8 @@ class MouvementsMixin:
                                  date_debut=self.e_mvt_debut.get().strip() or None,
                                  date_fin=self.e_mvt_fin.get().strip() or None,
                                  limit=2000)
-        libelles = {"entree": "📥 Entrée", "sortie": "📤 Sortie",
-                    "correction": "🔧 Correction", "transfert": "🔄 Transfert"}
+        libelles = {"entree": "Entrée", "sortie": "Sortie",
+                    "correction": "Correction", "transfert": "Transfert"}
         t = self.tab_mouvements
         t.delete(*t.get_children())
         entrees = sorties = 0

@@ -19,11 +19,11 @@ class RetoursMixin:
     def afficher_retours(self):
         if not self.peut("caisse"):
             return self._refus()
-        self._nouvelle_page("↩️ Retours et avoirs", self._idx_menu("Retours"))
+        self._nouvelle_page("Retours et avoirs", self._idx_menu("Retours"))
 
-        Bouton(self.zone_actions, "➕ Enregistrer un retour", "primary",
+        Bouton(self.zone_actions, "Enregistrer un retour", "primary",
                self._nouveau_retour, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🔄 Actualiser", "secondary",
+        Bouton(self.zone_actions, "Actualiser", "secondary",
                self.afficher_retours, petit=True).pack(side=tk.LEFT, padx=3)
 
         conteneur = tk.Frame(self.zone, bg=COULEURS["bg"])
@@ -90,7 +90,7 @@ class RetoursMixin:
             t.insert("", tk.END, tags=zebre(i, () if l["remis_en_stock"] else ("rupture",)),
                      values=(l["reference"] or "—", l["produit_nom"] or "—",
                              l["quantite"], fmt_money(l["total"]),
-                             "✅ Oui" if l["remis_en_stock"] else f"❌ {l['etat']}"))
+                             "Oui" if l["remis_en_stock"] else f"{l['etat']}"))
         retour = next((r for r in m3.get_retours() if r["id"] == int(sel[0])), None)
         if retour:
             remis = sum(1 for l in lignes if l["remis_en_stock"])

@@ -19,8 +19,8 @@ class CategoriesMixin:
     def afficher_categories(self):
         if not self.peut("produits"):
             return self._refus()
-        self._nouvelle_page("📁 Catégories", 5)
-        Bouton(self.zone_actions, "➕ Nouvelle catégorie", "primary",
+        self._nouvelle_page("Catégories", 5)
+        Bouton(self.zone_actions, "Nouvelle catégorie", "primary",
                self._nouvelle_categorie, petit=True).pack(side=tk.LEFT, padx=3)
 
         cadre = tk.Frame(self.zone, bg=COULEURS["card"])
@@ -34,8 +34,8 @@ class CategoriesMixin:
         self.tab_categories.bind("<Double-1>", lambda e: self._modifier_categorie())
 
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="✏️  Modifier", command=self._modifier_categorie)
-        menu.add_command(label="🗑️  Supprimer", command=self._supprimer_categorie)
+        menu.add_command(label="Modifier", command=self._modifier_categorie)
+        menu.add_command(label="Supprimer", command=self._supprimer_categorie)
 
         def clic_droit(e):
             iid = self.tab_categories.identify_row(e.y)

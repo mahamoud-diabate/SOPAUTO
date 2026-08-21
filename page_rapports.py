@@ -22,7 +22,7 @@ class RapportsMixin:
     def afficher_rapports(self):
         if not self.peut("rapports"):
             return self._refus()
-        self._nouvelle_page("💹 Rapports et analyses", 8)
+        self._nouvelle_page("Rapports et analyses", 8)
 
         onglets = ttk.Notebook(self.zone)
         onglets.pack(fill=tk.BOTH, expand=True)
@@ -34,7 +34,7 @@ class RapportsMixin:
 
     def _onglet_rapport_ventes(self, parent):
         page = tk.Frame(parent, bg=COULEURS["bg"], padx=12, pady=12)
-        parent.add(page, text="  📊 Ventes & marges  ")
+        parent.add(page, text="Ventes & marges")
 
         barre = tk.Frame(page, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 10))
@@ -55,11 +55,11 @@ class RapportsMixin:
             Bouton(barre, libelle, "secondary", lambda j=jours: self._periode_rapide(j),
                    petit=True).pack(side=tk.LEFT, padx=2)
 
-        Bouton(barre, "🖨️ Imprimer / PDF", "info", self._imprimer_rapport,
+        Bouton(barre, "Imprimer / PDF", "info", self._imprimer_rapport,
                petit=True).pack(side=tk.RIGHT, padx=3)
-        Bouton(barre, "📄 PDF", "success", self._rapport_en_pdf,
+        Bouton(barre, "PDF", "success", self._rapport_en_pdf,
                petit=True).pack(side=tk.RIGHT, padx=3)
-        Bouton(barre, "📤 Exporter CSV", "success", self._exporter_ventes,
+        Bouton(barre, "Exporter CSV", "success", self._exporter_ventes,
                petit=True).pack(side=tk.RIGHT, padx=3)
 
         self.zone_kpi_rapport = tk.Frame(page, bg=COULEURS["bg"])
@@ -108,15 +108,15 @@ class RapportsMixin:
 
     def _onglet_rapport_stock(self, parent):
         page = tk.Frame(parent, bg=COULEURS["bg"], padx=12, pady=12)
-        parent.add(page, text="  📦 Valorisation du stock  ")
+        parent.add(page, text="Valorisation du stock")
 
         barre = tk.Frame(page, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 10))
-        Bouton(barre, "📄 Bon de réapprovisionnement", "warning",
+        Bouton(barre, "Bon de réapprovisionnement", "warning",
                self.generer_reappro, petit=True).pack(side=tk.LEFT)
-        Bouton(barre, "📄 Bon en PDF", "success",
+        Bouton(barre, "Bon en PDF", "success",
                self._reappro_en_pdf, petit=True).pack(side=tk.LEFT, padx=6)
-        Bouton(barre, "📤 Exporter le catalogue", "info",
+        Bouton(barre, "Exporter le catalogue", "info",
                self._exporter_produits, petit=True).pack(side=tk.LEFT, padx=6)
 
         rapport = db.rapport_stock()
@@ -146,7 +146,7 @@ class RapportsMixin:
                       f"marge potentielle {fmt_money(totaux[2] - totaux[1], self.devise)}"
                  ).pack(anchor="w", pady=(8, 0))
 
-        c2 = Carte(page, "🐌 Stock dormant (aucune sortie récente)")
+        c2 = Carte(page, "Stock dormant (aucune sortie récente)")
         c2.pack(fill=tk.BOTH, expand=True)
         f_tree_t2 = tk.Frame(c2.corps, bg=COULEURS["card"])
         f_tree_t2.pack(fill=tk.BOTH, expand=True)
@@ -166,26 +166,26 @@ class RapportsMixin:
 
     def _onglet_historique_ventes(self, parent):
         page = tk.Frame(parent, bg=COULEURS["bg"], padx=12, pady=12)
-        parent.add(page, text="  🧾 Historique des ventes  ")
+        parent.add(page, text="Historique des ventes")
 
         barre = tk.Frame(page, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 8))
         self.rech_ventes = EntreeRecherche(barre, "N° facture ou client…", 30,
                                            callback=self._charger_historique_ventes)
         self.rech_ventes.pack(side=tk.LEFT)
-        Bouton(barre, "🖨️ Facture A4", "primary",
+        Bouton(barre, "Facture A4", "primary",
                lambda: self._imprimer_selection(self.tab_ventes, False),
                petit=True).pack(side=tk.LEFT, padx=(14, 3))
-        Bouton(barre, "📄 PDF", "success",
+        Bouton(barre, "PDF", "success",
                lambda: self._pdf_selection(self.tab_ventes, False),
                petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "🧾 Ticket", "info",
+        Bouton(barre, "Ticket", "info",
                lambda: self._imprimer_selection(self.tab_ventes, True),
                petit=True).pack(side=tk.LEFT, padx=3)
         if self.peut("admin"):
-            Bouton(barre, "✕ Annuler la vente", "danger", self._annuler_vente,
+            Bouton(barre, "Annuler la vente", "danger", self._annuler_vente,
                    petit=True).pack(side=tk.LEFT, padx=3)
-        self.lbl_resume_ventes = tk.Label(barre, text="", font=(POLICE, 9, "bold"),
+        self.lbl_resume_ventes = tk.Label(barre, text="", font=(POLICE, 9),
                                           bg=COULEURS["bg"], fg=COULEURS["primary"])
         self.lbl_resume_ventes.pack(side=tk.RIGHT, padx=8)
 
@@ -254,9 +254,9 @@ class RapportsMixin:
             c = tk.Frame(self.zone_kpi_rapport, bg=COULEURS["card"],
                          highlightbackground=COULEURS["border"], highlightthickness=1)
             c.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3)
-            tk.Label(c, text=titre, font=(POLICE, 8), bg=COULEURS["card"],
+            tk.Label(c, text=titre, font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"]).pack(pady=(8, 0), padx=8)
-            tk.Label(c, text=valeur, font=(POLICE, 14, "bold"), bg=COULEURS["card"],
+            tk.Label(c, text=valeur, font=(POLICE, 16, "bold"), bg=COULEURS["card"],
                      fg=couleur).pack(pady=(2, 8), padx=8)
 
         t = self.tab_rap_produits
@@ -308,7 +308,7 @@ class RapportsMixin:
                      values=(v["numero"] or f"#{v['id']}", fmt_date(v["date_vente"]),
                              v["client_nom"], v["nb_lignes"], fmt_money(v.get("remise", 0)),
                              fmt_money(v["total"]), v.get("mode_paiement", ""),
-                             v.get("utilisateur", ""), "❌ Annulée" if annulee else "✅ Validée"))
+                             v.get("utilisateur", ""), "Annulée" if annulee else "Validée"))
         self.lbl_resume_ventes.configure(
             text=f"{len(ventes)} vente(s) · total {fmt_money(total, self.devise)}")
 
@@ -370,7 +370,7 @@ class RapportsMixin:
             messagebox.showinfo(
                 "PDF indisponible",
                 "Aucun navigateur trouvé pour générer le PDF.\n\n"
-                "Utilisez « Imprimer » puis Ctrl+P → "
+                "Utilisez « Imprimer » puis Ctrl+P →"
                 "« Enregistrer au format PDF ».", parent=self.root)
             return
         self.statut(f"Génération du PDF via {export_pdf.nom_moteur()}…")

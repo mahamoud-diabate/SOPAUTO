@@ -39,7 +39,7 @@ class PageAnalyse:
         """Affiche l'écran d'analyse commerciale avec 4 onglets."""
         if not self.peut("rapports"):
             return self._refus()
-        self._nouvelle_page("💰 Analyse commerciale — prix et tendances",
+        self._nouvelle_page("Analyse commerciale — prix et tendances",
                             self._idx_menu("Analyse"))
 
         onglets = ttk.Notebook(self.zone)
@@ -77,7 +77,7 @@ class PageAnalyse:
 
     def _onglet_prix(self, parent):
         page = tk.Frame(parent, bg=COULEURS["bg"], padx=12, pady=12)
-        parent.add(page, text="  💰 Prix pratiqués  ")
+        parent.add(page, text="Prix pratiqués")
 
         barre = tk.Frame(page, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 8))
@@ -94,11 +94,11 @@ class PageAnalyse:
         self.cb_filtre_prix.pack(side=tk.LEFT, padx=(4, 12))
         self.cb_filtre_prix.bind("<<ComboboxSelected>>", lambda e: self._charger_prix())
 
-        Bouton(barre, "💡 Prix conseillé", "primary", self._voir_prix_conseille,
+        Bouton(barre, "Prix conseillé", "primary", self._voir_prix_conseille,
                petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "📜 Historique", "info", self._voir_historique_prix,
+        Bouton(barre, "Historique", "info", self._voir_historique_prix,
                petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "📤 Exporter", "secondary", self._exporter_prix,
+        Bouton(barre, "Exporter", "secondary", self._exporter_prix,
                petit=True).pack(side=tk.LEFT, padx=3)
 
         # ── Verdict global : la phrase qui résume tout ──
@@ -160,10 +160,9 @@ class PageAnalyse:
         couleurs_tendance = {"remise": COULEURS["danger"],
                              "majoration": COULEURS["success"],
                              "au prix": COULEURS["info"]}
-        icones = {"remise": "📉", "majoration": "📈", "au prix": "✅"}
         tend = synthese["tendance"]
         self.lbl_verdict.configure(
-            text=f"{icones.get(tend, 'ℹ️')}  {synthese['verdict']}",
+            text=synthese["verdict"],
             fg=couleurs_tendance.get(tend, COULEURS["text"]))
         if synthese["nb_lignes"]:
             self.lbl_verdict_detail.configure(
@@ -200,11 +199,11 @@ class PageAnalyse:
             c = tk.Frame(self.zone_kpi_prix, bg=COULEURS["card"], padx=14, pady=10,
                          highlightbackground=COULEURS["border"], highlightthickness=1)
             c.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
-            tk.Label(c, text=titre, font=(POLICE, 8), bg=COULEURS["card"],
+            tk.Label(c, text=titre, font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"], anchor="w").pack(anchor="w", fill=tk.X)
-            tk.Label(c, text=valeur, font=(POLICE, 15, "bold"), bg=COULEURS["card"],
+            tk.Label(c, text=valeur, font=(POLICE, 16, "bold"), bg=COULEURS["card"],
                      fg=couleur, anchor="w").pack(anchor="w", fill=tk.X)
-            tk.Label(c, text=sous, font=(POLICE, 7), bg=COULEURS["card"],
+            tk.Label(c, text=sous, font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"], anchor="w",
                      wraplength=190, justify="left").pack(anchor="w", fill=tk.X)
 
@@ -220,8 +219,8 @@ class PageAnalyse:
         elif "perte" in filtre:
             donnees = [p for p in donnees if p["nb_sous_cout"]]
 
-        libelles = {"remise": "📉 Bradé", "majoration": "📈 Majoré",
-                    "au prix": "✅ Au prix"}
+        libelles = {"remise": "Bradé", "majoration": "Majoré",
+                    "au prix": "Au prix"}
         t = self.tab_prix
         t.delete(*t.get_children())
         for i, p in enumerate(donnees):
@@ -280,7 +279,7 @@ class PageAnalyse:
 
     def _onglet_tendances(self, parent):
         page = tk.Frame(parent, bg=COULEURS["bg"], padx=12, pady=12)
-        parent.add(page, text="  📊 Tendances de vente  ")
+        parent.add(page, text="Tendances de vente")
 
         barre = tk.Frame(page, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 8))
@@ -300,13 +299,13 @@ class PageAnalyse:
                  bg=COULEURS["bg"]).pack(side=tk.LEFT)
         self.cb_filtre_tend = ttk.Combobox(
             barre, state="readonly", width=22, font=(POLICE, 9),
-            values=["Tout", "📉 En baisse seulement", "📈 En hausse seulement",
-                    "⛔ Ne se vendent plus", "🆕 Nouveaux"])
+            values=["Tout", "En baisse seulement", "En hausse seulement",
+                    "Ne se vendent plus", "Nouveaux"])
         self.cb_filtre_tend.current(0)
         self.cb_filtre_tend.pack(side=tk.LEFT, padx=(4, 12))
         self.cb_filtre_tend.bind("<<ComboboxSelected>>", lambda e: self._charger_tendances())
 
-        Bouton(barre, "📤 Exporter", "secondary", self._exporter_tendances,
+        Bouton(barre, "Exporter", "secondary", self._exporter_tendances,
                petit=True).pack(side=tk.LEFT, padx=3)
 
         # ── Courbe du CA (linéaire) ──
@@ -364,25 +363,25 @@ class PageAnalyse:
         capital_declin = sum(t["capital_immobilise"] for t in tous
                              if t["tendance"] in ("baisse", "forte_baisse", "arrete"))
         cartes = [
-            ("🚀 Forte hausse", compte.get("forte_hausse", 0), COULEURS["success"],
+            ("Forte hausse", compte.get("forte_hausse", 0), COULEURS["success"],
              "+50 % ou plus"),
-            ("📈 En hausse", compte.get("hausse", 0), COULEURS["success"], "+15 à 50 %"),
-            ("➡️ Stables", compte.get("stable", 0), COULEURS["info"], "±15 %"),
-            ("↘️ En baisse", compte.get("baisse", 0), COULEURS["warning"], "−15 à −50 %"),
-            ("📉 Forte baisse", compte.get("forte_baisse", 0), COULEURS["danger"],
+            ("En hausse", compte.get("hausse", 0), COULEURS["success"], "+15 à 50 %"),
+            ("Stables", compte.get("stable", 0), COULEURS["info"], "±15 %"),
+            ("↘ En baisse", compte.get("baisse", 0), COULEURS["warning"], "−15 à −50 %"),
+            ("Forte baisse", compte.get("forte_baisse", 0), COULEURS["danger"],
              "−50 % ou pire"),
-            ("⛔ Arrêtés", compte.get("arrete", 0), COULEURS["danger"],
+            ("Arrêtés", compte.get("arrete", 0), COULEURS["danger"],
              "plus aucune vente"),
         ]
         for titre, valeur, couleur, sous in cartes:
             c = tk.Frame(self.zone_kpi_tend, bg=COULEURS["card"], padx=12, pady=10,
                          highlightbackground=COULEURS["border"], highlightthickness=1)
             c.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-            tk.Label(c, text=titre, font=(POLICE, 8), bg=COULEURS["card"],
+            tk.Label(c, text=titre, font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"]).pack(anchor="w")
-            tk.Label(c, text=str(valeur), font=(POLICE, 17, "bold"),
+            tk.Label(c, text=str(valeur), font=(POLICE, 16, "bold"),
                      bg=COULEURS["card"], fg=couleur).pack(anchor="w")
-            tk.Label(c, text=sous, font=(POLICE, 7), bg=COULEURS["card"],
+            tk.Label(c, text=sous, font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"]).pack(anchor="w")
 
         # ── Filtrage ──
@@ -430,7 +429,7 @@ class PageAnalyse:
 
     def _onglet_alertes(self, parent):
         page = tk.Frame(parent, bg=COULEURS["bg"], padx=12, pady=12)
-        parent.add(page, text="  🚨 Alertes commerciales  ")
+        parent.add(page, text="Alertes commerciales")
 
         barre = tk.Frame(page, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 8))
@@ -438,9 +437,9 @@ class PageAnalyse:
                              "du plus grave au moins urgent.",
                  font=(POLICE, 10, "bold"), bg=COULEURS["bg"],
                  fg=COULEURS["text"]).pack(side=tk.LEFT)
-        Bouton(barre, "🔄 Actualiser", "secondary", self._charger_alertes,
+        Bouton(barre, "Actualiser", "secondary", self._charger_alertes,
                petit=True).pack(side=tk.RIGHT, padx=3)
-        Bouton(barre, "📦 Voir le produit", "info", self._alerte_vers_produit,
+        Bouton(barre, "Voir le produit", "info", self._alerte_vers_produit,
                petit=True).pack(side=tk.RIGHT, padx=3)
 
         self.zone_kpi_alertes = tk.Frame(page, bg=COULEURS["bg"])
@@ -478,9 +477,9 @@ class PageAnalyse:
              "vous perdez de l'argent"),
             ("🟠 Haute", compte.get("haute", 0), COULEURS["warning"],
              "à traiter cette semaine"),
-            ("🟡 Moyenne", compte.get("moyenne", 0), COULEURS["info"],
+            ("Moyenne", compte.get("moyenne", 0), COULEURS["info"],
              "à surveiller"),
-            ("🔵 Information", compte.get("info", 0), COULEURS["secondary"],
+            ("Information", compte.get("info", 0), COULEURS["secondary"],
              "opportunités"),
         ]
         for titre, valeur, couleur, sous in cartes:
@@ -489,13 +488,13 @@ class PageAnalyse:
             c.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
             tk.Label(c, text=titre, font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"]).pack(anchor="w")
-            tk.Label(c, text=str(valeur), font=(POLICE, 19, "bold"),
+            tk.Label(c, text=str(valeur), font=(POLICE, 20, "bold"),
                      bg=COULEURS["card"], fg=couleur).pack(anchor="w")
-            tk.Label(c, text=sous, font=(POLICE, 8), bg=COULEURS["card"],
+            tk.Label(c, text=sous, font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"]).pack(anchor="w")
 
         niveaux = {"critique": "🔴 Critique", "haute": "🟠 Haute",
-                   "moyenne": "🟡 Moyenne", "info": "🔵 Info"}
+                   "moyenne": "Moyenne", "info": "Info"}
         t = self.tab_alertes
         t.delete(*t.get_children())
         for i, a in enumerate(alertes):
@@ -507,7 +506,7 @@ class PageAnalyse:
 
         if not alertes:
             self.lbl_alertes_info.configure(
-                text="✅ Aucune alerte : vos prix et vos ventes sont sains.")
+                text="Aucune alerte : vos prix et vos ventes sont sains.")
         else:
             self.lbl_alertes_info.configure(
                 text=f"{len(alertes)} alerte(s) · sélectionnez une ligne puis "
@@ -537,7 +536,7 @@ class PageAnalyse:
 
     def _onglet_negociation(self, parent):
         page = tk.Frame(parent, bg=COULEURS["bg"], padx=12, pady=12)
-        parent.add(page, text="  👥 Qui négocie  ")
+        parent.add(page, text="Qui négocie")
 
         barre = tk.Frame(page, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 8))
@@ -590,8 +589,8 @@ class PageAnalyse:
 
     def _charger_negociation(self):
         jours = self._jours_de("cb_periode_nego")
-        libelles = {"remise": "📉 Brade", "majoration": "📈 Majore",
-                    "au prix": "✅ Au prix"}
+        libelles = {"remise": "Brade", "majoration": "Majore",
+                    "au prix": "Au prix"}
 
         vendeurs = ap.analyse_prix_par_vendeur(jours)
         t = self.tab_nego_vendeur

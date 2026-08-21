@@ -8,99 +8,115 @@ from typing import Any
 # ─── PALETTES CLAIR / SOMBRE ─────────────────────────
 
 PALETTES = {
+    # ── Palette « acier » : dominante bleu-gris industriel, accent orange securite.
+    # Choisie pour un poste de comptoir (lisibilite sous neon, forte densite) et
+    # non pour un tableau de bord SaaS. Aucune valeur Tailwind par defaut.
+    # Les deux themes portent STRICTEMENT les memes cles : une cle absente d'un
+    # theme retombait silencieusement sur la couleur de l'autre (les en-tetes de
+    # tableaux restaient clairs en mode sombre).
     "clair": {
-        "primary": "#4f46e5",
-        "primary_dark": "#4338ca",
-        "primary_light": "#e0e7ff",
-        "secondary": "#64748b",
-        "success": "#059669",
-        "success_light": "#d1fae5",
-        "danger": "#dc2626",
-        "danger_light": "#fee2e2",
-        "warning": "#d97706",
-        "warning_light": "#fef3c7",
-        "info": "#0284c7",
-        "info_light": "#e0f2fe",
-        "bg": "#f8fafc",
+        "primary": "#33566f",
+        "primary_dark": "#24404f",
+        "primary_light": "#dbe7ee",
+        "secondary": "#5b6b78",
+        "success": "#1f7a5c",
+        "success_light": "#dcefe8",
+        "danger": "#b3261e",
+        "danger_light": "#f8e2e0",
+        "warning": "#b5651d",
+        "warning_light": "#fbeddc",
+        "info": "#2b6c8f",
+        "info_light": "#ddeef5",
+        "bg": "#e9eff3",
         "card": "#ffffff",
-        "sidebar": "#0f172a",
-        "sidebar_text": "#94a3b8",
-        "sidebar_hover": "#1e3a5f",
-        "sidebar_active": "#1e3a5f",
-        "sidebar_active_pill": "#6366f1",
-        "sidebar_accent": "#818cf8",
-        "sidebar_sep": "#1e293b",
-        "sidebar_disabled": "#374151",
-        "text": "#0f172a",
-        "text_secondary": "#64748b",
-        "border": "#cbd5e1",
-        "row_alt": "#e2e8f0",
-        "alerte_bg": "#fffbeb",
-        "rupture_bg": "#fef2f2",
-        "heading": "#e2e8f0",
-        "heading_hover": "#cbd5e1",
-        "selection": "#e0e7ff",
-        "selection_fg": "#3730a3",
-        "statusbar": "#f1f5f9",
+        "sidebar": "#1b2b36",
+        "sidebar_text": "#9aabb6",
+        "sidebar_hover": "#274050",
+        "sidebar_active": "#274050",
+        "sidebar_active_pill": "#b5651d",
+        "sidebar_accent": "#8fa9b8",
+        "sidebar_sep": "#243845",
+        "sidebar_disabled": "#4a5b66",
+        "text": "#1b2b36",
+        "text_secondary": "#5b6b78",
+        "border": "#ccd6dc",
+        "row_alt": "#eef2f4",
+        "alerte_bg": "#fdf4e7",
+        "rupture_bg": "#fbeae8",
+        "heading": "#e3eaee",
+        "heading_hover": "#d3dee4",
+        "selection": "#dbe7ee",
+        "selection_fg": "#24404f",
+        "statusbar": "#eef2f4",
         "input_bg": "#ffffff",
-        "input_fg": "#0f172a",
-        "total_bg": "#eff6ff",
-        "canvas_grid": "#eef1f5",
-        "bar_other": "#818cf8",
-        "tooltip_bg": "#0f172a",
-        "table_header_bg": "#e0e7ff",
-        "table_header_fg": "#3730a3",
-        "table_even": "#f8fafc",
+        "input_fg": "#1b2b36",
+        "total_bg": "#eaf1f5",
+        "canvas_grid": "#e7ecef",
+        "bar_other": "#6b93ab",
+        "tooltip_bg": "#1b2b36",
+        "table_header_bg": "#dbe7ee",
+        "table_header_fg": "#24404f",
+        "table_even": "#f8fafb",
         "table_odd": "#ffffff",
+        "graph_line": "#33566f",
+        "role_superviseur": "#8fa9b8",
+        "role_gerant": "#5fae90",
+        "role_vendeur": "#d9a05b",
+        "role_admin": "#7fb3cc",
     },
     "sombre": {
-        "primary": "#6366f1",
-        "primary_dark": "#4f46e5",
-        "primary_light": "#252e4a",
-        "secondary": "#94a3b8",
-        "success": "#10b981",
-        "success_light": "#064e3b",
-        "danger": "#ef4444",
-        "danger_light": "#7f1d1d",
-        "warning": "#f59e0b",
-        "warning_light": "#78350f",
-        "info": "#06b6d4",
-        "info_light": "#164e63",
-        "bg": "#0b0f19",
-        "card": "#151c2c",
-        "sidebar": "#070a12",
-        "sidebar_text": "#94a3b8",
-        "sidebar_hover": "#0d2137",
-        "sidebar_active": "#0d2137",
-        "sidebar_active_pill": "#6366f1",
-        "sidebar_accent": "#818cf8",
-        "sidebar_sep": "#1a2236",
-        "sidebar_disabled": "#374151",
-        "text": "#f1f5f9",
-        "text_secondary": "#94a3b8",
-        "border": "#26334d",
-        "row_alt": "#1a2336",
-        "alerte_bg": "#451a03",
-        "rupture_bg": "#450a0a",
-        "heading": "#1e293b",
-        "heading_hover": "#334155",
-        "selection": "#312e81",
+        # Direction « ardoise claire » : le theme sombre precedent empilait
+        # trois valeurs quasi identiques (menu #0a1116 / page #121c24 /
+        # carte #16222b) — aucune hierarchie, un bloc boueux. On remonte
+        # l'ensemble et on ecarte les paliers pour que les cartes se detachent.
+        "primary": "#7fa6bd",
+        "primary_dark": "#5f8aa5",
+        "primary_light": "#2e3d49",
+        "secondary": "#93a3ae",
+        "success": "#4dab88",
+        "success_light": "#1b3b31",
+        "danger": "#e06a60",
+        "danger_light": "#45201d",
+        "warning": "#e09850",
+        "warning_light": "#42301a",
+        "info": "#5fa9cc",
+        "info_light": "#1a3945",
+        "bg": "#212a31",
+        "card": "#2b353e",
+        "sidebar": "#1a2229",
+        "sidebar_text": "#9fb0bb",
+        "sidebar_hover": "#2a3843",
+        "sidebar_active": "#2a3843",
+        "sidebar_active_pill": "#e09850",
+        "sidebar_accent": "#8ba5b5",
+        "sidebar_sep": "#26323b",
+        "sidebar_disabled": "#566672",
+        "text": "#eef2f5",
+        "text_secondary": "#a3b1bb",
+        "border": "#41505c",
+        "row_alt": "#303b45",
+        "alerte_bg": "#42301a",
+        "rupture_bg": "#45201d",
+        "heading": "#36434e",
+        "heading_hover": "#415059",
+        "selection": "#37505f",
         "selection_fg": "#ffffff",
-        "statusbar": "#151c2c",
-        "input_bg": "#0b0f19",
-        "input_fg": "#f1f5f9",
-        "total_bg": "#1e1b4b",
-        "canvas_grid": "#26334d",
-        "bar_other": "#6366f1",
-        "tooltip_bg": "#1e293b",
-        "graph_line": "#818cf8",
-        "table_even": "#151c2c",
-        "table_odd": "#1a2336",
-        # Ces deux cles manquaient au theme sombre : `.get()` retombait sur
-        # l'indigo clair du theme clair et les en-tetes de tableaux restaient
-        # clairs sur fond sombre.
-        "table_header_bg": "#252e4a",
-        "table_header_fg": "#a5b4fc",
+        "statusbar": "#2b353e",
+        "input_bg": "#1c242b",
+        "input_fg": "#eef2f5",
+        "total_bg": "#2c3d49",
+        "canvas_grid": "#3a4750",
+        "bar_other": "#5f8aa5",
+        "tooltip_bg": "#36434e",
+        "table_header_bg": "#36434e",
+        "table_header_fg": "#c8d6e0",
+        "table_even": "#2b353e",
+        "table_odd": "#303b45",
+        "graph_line": "#7fa6bd",
+        "role_superviseur": "#8ba5b5",
+        "role_gerant": "#5cb495",
+        "role_vendeur": "#e09850",
+        "role_admin": "#7fb8d4",
     },
 }
 
@@ -120,8 +136,55 @@ def appliquer_palette(nom: str) -> str:
 POLICE = "Segoe UI"
 
 
+def _police_disponible(*candidats: str) -> str:
+    """Première police réellement installée, sinon Segoe UI.
+
+    On interroge le système plutôt que de supposer : sur un poste Windows 8 ou
+    une installation allégée, Bahnschrift est absente et Tk substituerait
+    silencieusement une police quelconque.
+    """
+    try:
+        from tkinter import font as _font
+        familles = {f.lower() for f in _font.families()}
+    except Exception:
+        return POLICE
+    for nom in candidats:
+        if nom.lower() in familles:
+            return nom
+    return POLICE
+
+
+# Duo typographique : une condensée technique pour les titres, une humaniste
+# pour les données. Les deux sont natives Windows — aucun téléchargement sur un
+# poste de comptoir. Bahnschrift a des chiffres PROPORTIONNELS : elle ne doit
+# jamais servir à afficher un montant, sous peine de colonnes désalignées.
+# Segoe UI, elle, a des chiffres tabulaires (toutes les largeurs identiques).
+POLICE_TITRE = None  # résolue au premier appel, une fenêtre Tk devant exister
+
+
+def resoudre_police_titre() -> str:
+    """Résout la police de titre UNE fois, au démarrage.
+
+    À n'appeler que depuis appliquer_theme(), jamais pendant la construction
+    d'un écran : font.families() est un aller-retour Tcl qui laisse les
+    callbacks <Configure> en attente se déclencher au milieu d'une
+    reconstruction, sur des tableaux déjà détruits.
+    """
+    global POLICE_TITRE
+    if POLICE_TITRE is None:
+        POLICE_TITRE = _police_disponible("Bahnschrift SemiBold", "Bahnschrift",
+                                          "Segoe UI Semibold")
+    return POLICE_TITRE
+
+
+def police_titre() -> str:
+    """Police de titre déjà résolue. Aucun appel Tcl."""
+    return POLICE_TITRE or POLICE
+
+
 def appliquer_theme(root, factor=1.0) -> ttk.Style | None:
     """Configure les styles ttk de l'application avec taille adaptative."""
+    resoudre_police_titre()   # une seule interrogation du systeme, au demarrage
     style = ttk.Style(root)
     try:
         style.theme_use("clam")
@@ -140,19 +203,19 @@ def appliquer_theme(root, factor=1.0) -> ttk.Style | None:
                     fieldbackground=COULEURS["card"],
                     foreground=COULEURS["text"],
                     rowheight=row_h,
-                    borderwidth=1,
-                    relief="solid",
+                    borderwidth=0,
+                    relief="flat",
                     font=(POLICE, taille_base))
     style.configure("Treeview.Heading",
                     background=COULEURS["table_header_bg"],
                     foreground=COULEURS["table_header_fg"],
-                    relief="solid",
-                    borderwidth=1,
+                    relief="flat",
+                    borderwidth=0,
                     font=(POLICE, taille_titre, "bold"),
                     padding=(10, 8))
     style.map("Treeview.Heading",
-              background=[("active", COULEURS.get("primary_light", "#c7d2fe"))],
-              foreground=[("active", COULEURS.get("primary", "#4f46e5"))])
+              background=[("active", COULEURS["primary_light"])],
+              foreground=[("active", COULEURS["primary"])])
     style.map("Treeview",
               background=[("selected", COULEURS["selection"])],
               foreground=[("selected", COULEURS["selection_fg"])])
@@ -193,7 +256,7 @@ def appliquer_theme(root, factor=1.0) -> ttk.Style | None:
                     troughcolor=COULEURS["heading"])
 
     # Labels d'état
-    style.configure("Etat.TLabel", font=(POLICE, 9, "bold"), padding=(6, 2, 6, 2))
+    style.configure("Etat.TLabel", font=(POLICE, 9), padding=(6, 2, 6, 2))
 
     return style
 
@@ -290,16 +353,18 @@ class Carte(tk.Frame):
     """Conteneur blanc type « carte »."""
 
     def __init__(self, master, titre: Any = None, **kwargs):
+        # Pas de bordure 1px : la carte se detache deja du fond de page par
+        # son propre fond. Empiler des filets gris autour de chaque bloc —
+        # et de chaque bloc imbrique — aplatit la lecture au lieu de la
+        # structurer. La separation se fait par le fond et les marges.
         super().__init__(master, bg=COULEURS["card"],
-                         highlightbackground=COULEURS["border"],
-                         highlightthickness=1, **kwargs)
+                         highlightthickness=0, **kwargs)
         if titre:
             entete = tk.Frame(self, bg=COULEURS["card"])
             entete.pack(fill=tk.X, padx=14, pady=(12, 4))
-            tk.Label(entete, text=titre, font=(POLICE, 11, "bold"),
+            tk.Label(entete, text=titre, font=(police_titre(), 12, "bold"),
                      bg=COULEURS["card"], fg=COULEURS["text"]).pack(side=tk.LEFT)
             self.entete = entete
-            tk.Frame(self, bg=COULEURS["border"], height=1).pack(fill=tk.X, padx=0)
         self.corps = tk.Frame(self, bg=COULEURS["card"])
         self.corps.pack(fill=tk.BOTH, expand=True, padx=14, pady=(8, 12))
 
@@ -320,7 +385,7 @@ class EntreeRecherche(tk.Frame):
                          highlightthickness=1, highlightcolor=COULEURS["primary"])
         cadre.pack(fill=tk.X)
 
-        tk.Label(cadre, text="🔍", bg=COULEURS["card"],
+        tk.Label(cadre, text="", bg=COULEURS["card"],
                  fg=COULEURS["text_secondary"]).pack(side=tk.LEFT, padx=(8, 2))
 
         self.var = tk.StringVar()
@@ -330,7 +395,7 @@ class EntreeRecherche(tk.Frame):
                               insertbackground=COULEURS["primary"])
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=5)
 
-        self.btn_clear = tk.Label(cadre, text="✕", bg=COULEURS["card"],
+        self.btn_clear = tk.Label(cadre, text="×", font=(POLICE, 12), bg=COULEURS["card"],
                                   fg=COULEURS["text_secondary"], cursor="hand2")
         self.btn_clear.pack(side=tk.RIGHT, padx=8)
         self.btn_clear.bind("<Button-1>", lambda e: self.effacer())
@@ -562,7 +627,7 @@ class KPI(tk.Frame):
         # Icône + Valeur
         haut = tk.Frame(contenu, bg=COULEURS["card"])
         haut.pack(fill=tk.X)
-        tk.Label(haut, text=icone, font=(POLICE, 18), bg=COULEURS["card"], fg=COULEURS["text"]).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(haut, text=icone, font=(POLICE, 20), bg=COULEURS["card"], fg=COULEURS["text"]).pack(side=tk.LEFT, padx=(0, 8))
         tk.Label(haut, text=valeur, font=(POLICE, 20, "bold"), bg=COULEURS["card"], fg=COULEURS["text"]).pack(side=tk.LEFT)
 
         # Label
@@ -570,24 +635,27 @@ class KPI(tk.Frame):
 
         # Tendance optionnelle
         if tendance:
-            tk.Label(contenu, text=tendance, font=(POLICE, 8, "bold"), bg=COULEURS["card"], fg=COULEURS["success"]).pack(anchor="w")
+            tk.Label(contenu, text=tendance, font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["success"]).pack(anchor="w")
 
 
 class Badge(tk.Label):
     """Badge coloré pour numérotation/états."""
 
-    COULEURS_BADGE = {
-        "primary": ("#2563eb", "#dbeafe"),
-        "success": ("#16a34a", "#dcfce7"),
-        "warning": ("#ea580c", "#ffedd5"),
-        "danger": ("#dc2626", "#fee2e2"),
-        "info": ("#0284c7", "#e0f2fe"),
-        "secondary": ("#64748b", "#e2e8f0"),
+    # Resolu a l'instanciation et non au chargement du module : en table de
+    # classe, les couleurs restaient figees sur le theme clair apres bascule.
+    VARIANTES = {
+        "primary": ("primary", "primary_light"),
+        "success": ("success", "success_light"),
+        "warning": ("warning", "warning_light"),
+        "danger": ("danger", "danger_light"),
+        "info": ("info", "info_light"),
+        "secondary": ("text_secondary", "row_alt"),
     }
 
     def __init__(self, master, texte: str, variante: str = "primary", **kwargs):
-        fg, bg = self.COULEURS_BADGE.get(variante, self.COULEURS_BADGE["primary"])
-        super().__init__(master, text=texte, font=(POLICE, 8, "bold"), bg=bg, fg=fg, padx=6, pady=1, **kwargs)
+        cle_fg, cle_bg = self.VARIANTES.get(variante, self.VARIANTES["primary"])
+        fg, bg = COULEURS[cle_fg], COULEURS[cle_bg]
+        super().__init__(master, text=texte, font=(POLICE, 9), bg=bg, fg=fg, padx=6, pady=1, **kwargs)
 
 
 def ajouter_scrollbars(parent, widget) -> tuple:

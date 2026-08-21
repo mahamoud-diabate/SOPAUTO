@@ -17,12 +17,12 @@ class VehiculesMixin:
     # ═══════════════════════════════════════════════════
 
     def afficher_recherche_vehicule(self):
-        self._nouvelle_page("🚗 Quelle pièce pour quel véhicule ?",
+        self._nouvelle_page("Quelle pièce pour quel véhicule ?",
                             self._idx_menu("Véhicules"))
 
-        Bouton(self.zone_actions, "🔗 Lier une pièce", "primary",
+        Bouton(self.zone_actions, "Lier une pièce", "primary",
                self._lier_compatibilite, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🚙 Nouveau modèle", "info",
+        Bouton(self.zone_actions, "Nouveau modèle", "info",
                self._nouveau_modele, petit=True).pack(side=tk.LEFT, padx=3)
 
         # ── Filtres ──
@@ -55,9 +55,9 @@ class VehiculesMixin:
         self.cb_cat_vehic.current(0)
         self.cb_cat_vehic.pack(side=tk.LEFT, padx=(4, 12))
 
-        Bouton(ligne, "🔍 Chercher", "primary", self._chercher_vehicule,
+        Bouton(ligne, "Chercher", "primary", self._chercher_vehicule,
                petit=True).pack(side=tk.LEFT, padx=4)
-        Bouton(ligne, "✕ Réinitialiser", "secondary", self._reset_vehicule,
+        Bouton(ligne, "Réinitialiser", "secondary", self._reset_vehicule,
                petit=True).pack(side=tk.LEFT, padx=4)
 
         ligne2 = tk.Frame(filtre.corps, bg=COULEURS["card"])
@@ -67,10 +67,10 @@ class VehiculesMixin:
         self.e_ref_univ = tk.Entry(ligne2, font=(POLICE, 10), width=26, bd=1, relief=tk.SOLID)
         self.e_ref_univ.pack(side=tk.LEFT, padx=6, ipady=2)
         self.e_ref_univ.bind("<Return>", lambda e: self._chercher_reference())
-        Bouton(ligne2, "🔎 Chercher la référence", "info", self._chercher_reference,
+        Bouton(ligne2, "Chercher la référence", "info", self._chercher_reference,
                petit=True).pack(side=tk.LEFT, padx=4)
 
-        self.lbl_vehic_resume = tk.Label(ligne2, text="", font=(POLICE, 9, "bold"),
+        self.lbl_vehic_resume = tk.Label(ligne2, text="", font=(POLICE, 9),
                                          bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_vehic_resume.pack(side=tk.RIGHT)
 
@@ -143,7 +143,7 @@ class VehiculesMixin:
         self._afficher_resultats_vehicule(lignes)
 
     def _afficher_resultats_vehicule(self, resultats):
-        certitudes = {"confirme": "✅ Confirmé", "probable": "🟡 Probable",
+        certitudes = {"confirme": "Confirmé", "probable": "Probable",
                       "a_verifier": "⚠ À vérifier"}
         t = self.tab_vehic
         t.delete(*t.get_children())

@@ -19,8 +19,8 @@ class FournisseursMixin:
     def afficher_fournisseurs(self):
         if not self.peut("produits"):
             return self._refus()
-        self._nouvelle_page("🏭 Fournisseurs", 6)
-        Bouton(self.zone_actions, "➕ Nouveau fournisseur", "primary",
+        self._nouvelle_page("Fournisseurs", 6)
+        Bouton(self.zone_actions, "Nouveau fournisseur", "primary",
                self._nouveau_fournisseur, petit=True).pack(side=tk.LEFT, padx=3)
 
         barre = tk.Frame(self.zone, bg=COULEURS["bg"])
@@ -42,8 +42,8 @@ class FournisseursMixin:
         self.tab_fournisseurs.bind("<Double-1>", lambda e: self._modifier_fournisseur())
 
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="✏️  Modifier", command=self._modifier_fournisseur)
-        menu.add_command(label="🗑️  Supprimer", command=self._supprimer_fournisseur)
+        menu.add_command(label="Modifier", command=self._modifier_fournisseur)
+        menu.add_command(label="Supprimer", command=self._supprimer_fournisseur)
 
         def clic_droit(e):
             iid = self.tab_fournisseurs.identify_row(e.y)

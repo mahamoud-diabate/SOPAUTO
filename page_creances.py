@@ -4,7 +4,7 @@ SOPAUTO - Gestion des Créances Clients & Historique des Règlements (Version Am
 Fonctionnalités :
 - Tableau de bord KPI synthétique (Total créances, Retards > 15j, Clients débiteurs, Règlements du mois).
 - Filtres intelligents (Par client, Par recherche texte/téléphone, Par statut d'ancienneté : Toutes / Retards / À suivre / Récentes).
-- Double-clic & Bouton "💰 Encaisser un acompte / solde" avec génération automatique du reçu de règlement.
+- Double-clic & Bouton "Encaisser un acompte / solde" avec génération automatique du reçu de règlement.
 - Vue combinée "Encours par client" (gauche) et "Factures non soldées" (droite).
 - Historique complet des règlements effectués avec ré-impression des reçus d'encaissement.
 """
@@ -27,18 +27,18 @@ class CreancesMixin:
     def afficher_creances(self):
         if not self.peut("rapports"):
             return self._refus()
-        self._nouvelle_page("💳 Gestion des créances clients & Règlements", self._idx_menu("Créances"))
+        self._nouvelle_page("Gestion des créances clients & Règlements", self._idx_menu("Créances"))
 
         self._filtre_statut_creance = "toutes"  # toutes | retard | suivre | recentes
 
         # ── Actions dans l'en-tête de page ──
-        Bouton(self.zone_actions, "💰 Encaisser créance (F2)", "success",
+        Bouton(self.zone_actions, "Encaisser créance (F2)", "success",
                self._encaisser_creance, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📑 Imprimer Relances CSV", "info",
+        Bouton(self.zone_actions, "Imprimer Relances CSV", "info",
                self._imprimer_creances, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📜 Historique Règlements", "secondary",
+        Bouton(self.zone_actions, "Historique Règlements", "secondary",
                self._voir_historique_reglements, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🔄 Actualiser", "secondary",
+        Bouton(self.zone_actions, "Actualiser", "secondary",
                self.afficher_creances, petit=True, outline=True).pack(side=tk.LEFT, padx=3)
 
         # ── Conteneur principal ──
@@ -66,16 +66,16 @@ class CreancesMixin:
         self.btn_cr_toutes = Bouton(f_pilules, "Toutes", "primary", lambda: self._filtrer_ancienneté("toutes"), petit=True)
         self.btn_cr_toutes.pack(side=tk.LEFT, padx=2)
 
-        self.btn_cr_retard = Bouton(f_pilules, "🔴 En retard (>15j)", "danger", lambda: self._filtrer_ancienneté("retard"), petit=True, outline=True)
+        self.btn_cr_retard = Bouton(f_pilules, "En retard (>15j)", "danger", lambda: self._filtrer_ancienneté("retard"), petit=True, outline=True)
         self.btn_cr_retard.pack(side=tk.LEFT, padx=2)
 
-        self.btn_cr_suivre = Bouton(f_pilules, "🟠 À suivre (7-15j)", "warning", lambda: self._filtrer_ancienneté("suivre"), petit=True, outline=True)
+        self.btn_cr_suivre = Bouton(f_pilules, "À suivre (7-15j)", "warning", lambda: self._filtrer_ancienneté("suivre"), petit=True, outline=True)
         self.btn_cr_suivre.pack(side=tk.LEFT, padx=2)
 
-        self.btn_cr_recentes = Bouton(f_pilules, "🟢 Récentes (<7j)", "success", lambda: self._filtrer_ancienneté("recentes"), petit=True, outline=True)
+        self.btn_cr_recentes = Bouton(f_pilules, "Récentes (<7j)", "success", lambda: self._filtrer_ancienneté("recentes"), petit=True, outline=True)
         self.btn_cr_recentes.pack(side=tk.LEFT, padx=2)
 
-        self.lbl_resume_creances = tk.Label(cf, text="", font=(POLICE, 9, "bold"),
+        self.lbl_resume_creances = tk.Label(cf, text="", font=(POLICE, 9),
                                             bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_resume_creances.pack(side=tk.RIGHT, padx=6)
 
@@ -84,13 +84,13 @@ class CreancesMixin:
         conteneur.pack(fill=tk.BOTH, expand=True)
 
         # ── Colonne Gauche : Clients Débiteurs ──
-        c1 = Carte(conteneur, "👥 Clients Débiteurs & Encours")
+        c1 = Carte(conteneur, "Clients Débiteurs & Encours")
         c1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
 
         # Bouton Réinitialiser filtre client dans son propre frame (pack)
         f_btn_c1 = tk.Frame(c1.corps, bg=COULEURS["card"])
         f_btn_c1.pack(fill=tk.X, pady=(0, 6))
-        Bouton(f_btn_c1, "🌐 Tous les clients", "secondary",
+        Bouton(f_btn_c1, "Tous les clients", "secondary",
                self._reinitialiser_filtre_client, petit=True, outline=True).pack(anchor="w")
 
         # Frame dédié à la table client (grid via ajouter_scrollbars)
@@ -106,7 +106,7 @@ class CreancesMixin:
         self.tab_creances_client.bind("<<TreeviewSelect>>", lambda e: self._charger_creances_detail())
 
         # ── Colonne Droite : Factures Dues ──
-        c2 = Carte(conteneur, "📄 Factures Non Soldées")
+        c2 = Carte(conteneur, "Factures Non Soldées")
         c2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
 
         # Frame dédié à la table des factures
@@ -129,7 +129,7 @@ class CreancesMixin:
         self.root.bind("<F2>", lambda e: self._encaisser_creance())
 
         self.lbl_creances_info = tk.Label(
-            c2.corps, text="💡 Double-cliquez sur une facture (ou touche F2) pour encaisser un acompte.",
+            c2.corps, text="Double-cliquez sur une facture (ou touche F2) pour encaisser un acompte.",
             font=(POLICE, 9, "italic"), bg=COULEURS["card"], fg=COULEURS["text_secondary"])
         self.lbl_creances_info.pack(anchor="w", pady=(6, 0))
 
@@ -160,10 +160,10 @@ class CreancesMixin:
         seuil = int(parse_float(self.params.get("alerte_creance_jours", 15), 15))
 
         kpis_data = [
-            ("💳", fmt_money(kpi["creances_total"], self.devise), f"{int(kpi['creances_nb'])} facture(s) en cours", COULEURS["warning"]),
-            ("⚠️", fmt_money(kpi["creances_retard"], self.devise), f"Retard (> {seuil} j) : {int(kpi['creances_nb_retard'])} factures", COULEURS["danger"]),
-            ("👥", f"{int(kpi.get('nb_clients_debiteurs', kpi['creances_nb']))} client(s)", "Portefeuille débiteurs", COULEURS["primary"]),
-            ("💰", fmt_money(kpi.get("reglements_mois", 0), self.devise), "Encaissements reçus ce mois", COULEURS["success"]),
+            ("", fmt_money(kpi["creances_total"], self.devise), f"{int(kpi['creances_nb'])} facture(s) en cours", COULEURS["warning"]),
+            ("⚠", fmt_money(kpi["creances_retard"], self.devise), f"Retard (> {seuil} j) : {int(kpi['creances_nb_retard'])} factures", COULEURS["danger"]),
+            ("", f"{int(kpi.get('nb_clients_debiteurs', kpi['creances_nb']))} client(s)", "Portefeuille débiteurs", COULEURS["primary"]),
+            ("", fmt_money(kpi.get("reglements_mois", 0), self.devise), "Encaissements reçus ce mois", COULEURS["success"]),
         ]
 
         for i, (icone, val, label, coul) in enumerate(kpis_data):
@@ -269,7 +269,7 @@ class CreancesMixin:
             return
 
         d = DemanderMontant(
-            self.root, "💰 Encaisser un acompte / solde",
+            self.root, "Encaisser un acompte / solde",
             f"Facture : {creance['numero']}  ·  Client : {creance['client_nom']}\n\n"
             f"Total Facture : {fmt_money(creance['total'], self.devise)}\n"
             f"Déjà Réglé : {fmt_money(creance['total_paye'], self.devise)}\n"
@@ -283,7 +283,7 @@ class CreancesMixin:
         ok, msg = m3.encaisser_creance(vente_id, montant, mode, ref)
 
         if ok:
-            self.statut(f"✅ {msg}", COULEURS["success"])
+            self.statut(f"{msg}", COULEURS["success"])
             if messagebox.askyesno("Reçu de Règlement", f"{msg}\n\nSouhaitez-vous générer le bon d'encaissement / reçu de règlement ?", parent=self.root):
                 try:
                     ok_p, res_p = factures.imprimer_facture(vente_id)
@@ -297,12 +297,12 @@ class CreancesMixin:
 
     def _voir_historique_reglements(self):
         top = tk.Toplevel(self.root)
-        top.title("📜 Historique des Règlements & Acomptes Encaissés")
+        top.title("Historique des Règlements & Acomptes Encaissés")
         top.geometry("820x520")
         top.configure(bg=COULEURS["bg"])
         top.transient(self.root)
 
-        tk.Label(top, text="📜 Historique des règlements encaissés", font=(POLICE, 12, "bold"),
+        tk.Label(top, text="Historique des règlements encaissés", font=(POLICE, 12, "bold"),
                  bg=COULEURS["bg"], fg=COULEURS["primary"]).pack(anchor="w", padx=16, pady=12)
 
         cadre = tk.Frame(top, bg=COULEURS["card"])

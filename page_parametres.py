@@ -22,14 +22,14 @@ class ParametresMixin:
     def afficher_parametres(self):
         if not self.peut("admin"):
             return self._refus()
-        self._nouvelle_page("⚙️ Paramètres", 9)
+        self._nouvelle_page("Paramètres", 9)
 
         onglets = ttk.Notebook(self.zone)
         onglets.pack(fill=tk.BOTH, expand=True)
 
         # ── Entreprise ──
         page = tk.Frame(onglets, bg=COULEURS["bg"], padx=20, pady=20)
-        onglets.add(page, text="  🏢 Entreprise  ")
+        onglets.add(page, text="Entreprise")
 
         champs = [("entreprise_nom", "Nom de l'entreprise"),
                   ("entreprise_activite", "Activité"),
@@ -53,7 +53,7 @@ class ParametresMixin:
             e.grid(row=i, column=1, sticky="ew", padx=10, pady=5, ipady=3)
             self.champs_params[cle] = e
         page.columnconfigure(1, weight=1)
-        Bouton(page, "💾 Enregistrer les paramètres", "primary",
+        Bouton(page, "Enregistrer les paramètres", "primary",
                self._sauver_params).grid(row=len(champs), column=1, sticky="w", padx=10, pady=16)
         tk.Label(page, text="Ces informations apparaissent sur les factures et les rapports.",
                  font=(POLICE, 9), bg=COULEURS["bg"], fg=COULEURS["text_secondary"]).grid(
@@ -61,14 +61,14 @@ class ParametresMixin:
 
         # ── Utilisateurs ──
         page2 = tk.Frame(onglets, bg=COULEURS["bg"], padx=12, pady=12)
-        onglets.add(page2, text="  👤 Utilisateurs  ")
+        onglets.add(page2, text="Utilisateurs")
         barre = tk.Frame(page2, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 8))
-        Bouton(barre, "➕ Nouvel utilisateur", "primary",
+        Bouton(barre, "Nouvel utilisateur", "primary",
                self._nouvel_utilisateur, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "✏️ Modifier", "info", self._modifier_utilisateur,
+        Bouton(barre, "Modifier", "info", self._modifier_utilisateur,
                petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "🗑️ Supprimer", "danger", self._supprimer_utilisateur,
+        Bouton(barre, "Supprimer", "danger", self._supprimer_utilisateur,
                petit=True).pack(side=tk.LEFT, padx=3)
 
         f_tree_util = tk.Frame(page2, bg=COULEURS["bg"])
@@ -86,16 +86,16 @@ class ParametresMixin:
 
         # ── Sauvegardes ──
         page3 = tk.Frame(onglets, bg=COULEURS["bg"], padx=12, pady=12)
-        onglets.add(page3, text="  💾 Sauvegardes  ")
+        onglets.add(page3, text="Sauvegardes")
         barre = tk.Frame(page3, bg=COULEURS["bg"])
         barre.pack(fill=tk.X, pady=(0, 8))
-        Bouton(barre, "💾 Sauvegarder maintenant (Ctrl+S)", "success",
+        Bouton(barre, "Sauvegarder maintenant (Ctrl+S)", "success",
                self.sauvegarder, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "♻️ Restaurer la sélection", "danger",
+        Bouton(barre, "Restaurer la sélection", "danger",
                self._restaurer, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "📂 Ouvrir le dossier", "secondary",
+        Bouton(barre, "Ouvrir le dossier", "secondary",
                lambda: self._ouvrir_dossier(db.BACKUP_DIR), petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(barre, "📁 Choisir emplacement...", "info",
+        Bouton(barre, "Choisir emplacement...", "info",
                self._choisir_dossier_sauvegardes, petit=True).pack(side=tk.LEFT, padx=3)
 
         # Afficher le dossier actuel
@@ -119,7 +119,7 @@ class ParametresMixin:
 
         # ── Journal ──
         page4 = tk.Frame(onglets, bg=COULEURS["bg"], padx=12, pady=12)
-        onglets.add(page4, text="  📜 Journal d'activité  ")
+        onglets.add(page4, text="Journal d'activité")
         f_tree_journal = tk.Frame(page4, bg=COULEURS["bg"])
         f_tree_journal.pack(fill=tk.BOTH, expand=True)
         t = TableauTriable(f_tree_journal, [
@@ -185,7 +185,7 @@ class ParametresMixin:
         for i, u in enumerate(db.get_utilisateurs()):
             t.insert("", tk.END, iid=u["id"], tags=zebre(i, () if u["actif"] else ("inactif",)),
                      values=(u["nom_utilisateur"], u["nom_complet"], u["role"],
-                             "✅" if u["actif"] else "❌", fmt_date(u["date_creation"]),
+                             "Actif" if u["actif"] else "Inactif", fmt_date(u["date_creation"]),
                              fmt_date(u["dernier_acces"]) if u["dernier_acces"] else "jamais"))
 
 

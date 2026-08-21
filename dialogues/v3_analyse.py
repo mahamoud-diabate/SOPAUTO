@@ -31,14 +31,14 @@ class DialogueHistoriquePrix(tk.Toplevel):
                           highlightbackground=COULEURS["border"], highlightthickness=1)
         entete.pack(fill=tk.X, pady=(0, 10))
         tk.Label(entete, text=f"{p['reference']} — {p['nom']}",
-                 font=(POLICE, 14, "bold"), bg=COULEURS["card"],
+                 font=(POLICE, 16, "bold"), bg=COULEURS["card"],
                  fg=COULEURS["text"]).pack(anchor="w")
         prix = [l["prix_unitaire"] for l in detail["lignes"]]
         if prix:
             moyen = sum(l["prix_unitaire"] * l["quantite"] for l in detail["lignes"]) / \
                     max(1, sum(l["quantite"] for l in detail["lignes"]))
             tk.Label(entete,
-                     text=f"Prix affiché : {fmt_money(p['prix_catalogue'], devise)}   ·   "
+                     text=f"Prix affiché : {fmt_money(p['prix_catalogue'], devise)} ·"
                           f"Coût de revient : {fmt_money(p['cout'], devise)}   ·   "
                           f"Prix réel moyen : {fmt_money(moyen, devise)}   ·   "
                           f"Amplitude : {fmt_money(min(prix), devise)} → "
@@ -135,7 +135,7 @@ class DialogueHistoriquePrix(tk.Toplevel):
                 y = y_de(valeur)
                 canvas.create_line(marge_g, y, largeur - marge_d, y,
                                    fill=COULEURS["canvas_grid"])
-                canvas.create_text(marge_g - 8, y, anchor="e", font=(POLICE, 7),
+                canvas.create_text(marge_g - 8, y, anchor="e", font=(POLICE, 9),
                                    fill=COULEURS["text_secondary"],
                                    text=fmt_money(valeur))
 
@@ -144,7 +144,7 @@ class DialogueHistoriquePrix(tk.Toplevel):
             canvas.create_line(marge_g, y_cat, largeur - marge_d, y_cat,
                                fill=COULEURS["info"], width=2)
             canvas.create_text(largeur - marge_d - 4, y_cat - 8, anchor="e",
-                               font=(POLICE, 7, "bold"), fill=COULEURS["info"],
+                               font=(POLICE, 9, "bold"), fill=COULEURS["info"],
                                text="prix affiché")
 
             # Repère coût de revient (pointillés)
@@ -153,7 +153,7 @@ class DialogueHistoriquePrix(tk.Toplevel):
                 canvas.create_line(marge_g, y_cout, largeur - marge_d, y_cout,
                                    fill=COULEURS["danger"], width=1, dash=(4, 3))
                 canvas.create_text(largeur - marge_d - 4, y_cout + 9, anchor="e",
-                                   font=(POLICE, 7, "bold"), fill=COULEURS["danger"],
+                                   font=(POLICE, 9, "bold"), fill=COULEURS["danger"],
                                    text="coût de revient")
 
             # La courbe des prix pratiqués
@@ -187,7 +187,7 @@ class DialogueHistoriquePrix(tk.Toplevel):
                     except ValueError:
                         libelle = date
                     canvas.create_text(x, marge_h + zone_h + 14, text=libelle,
-                                       font=(POLICE, 8),
+                                       font=(POLICE, 9),
                                        fill=COULEURS["text_secondary"])
 
         canvas.bind("<Configure>", redessiner)
@@ -210,7 +210,7 @@ class DialoguePrixConseille(tk.Toplevel):
         produit = db.get_produit(produit_id)
         nom = f"{produit['reference']} — {produit['nom']}" if produit else ""
 
-        tk.Label(self, text=nom, font=(POLICE, 13, "bold"), bg=COULEURS["bg"],
+        tk.Label(self, text=nom, font=(POLICE, 12, "bold"), bg=COULEURS["bg"],
                  fg=COULEURS["text"]).pack(anchor="w", pady=(0, 12))
 
         grille = tk.Frame(self, bg=COULEURS["card"], padx=16, pady=14,
@@ -244,7 +244,7 @@ class DialoguePrixConseille(tk.Toplevel):
 
         if conseil["palier_dominant"]:
             pal = conseil["palier_dominant"]
-            tk.Label(self, text=f"Prix le plus souvent pratiqué : "
+            tk.Label(self, text=f"Prix le plus souvent pratiqué :"
                                 f"{fmt_money(pal['prix'], devise)} "
                                 f"({pal['nb']} fois, {pal['part_pct']:.0f} % des ventes)",
                      font=(POLICE, 9), bg=COULEURS["bg"],
@@ -255,7 +255,7 @@ class DialoguePrixConseille(tk.Toplevel):
                  wraplength=520).pack(anchor="w", pady=(12, 0))
 
         tk.Label(self, text=f"Basé sur {conseil['nb_ventes']} vente(s) réelle(s).",
-                 font=(POLICE, 8), bg=COULEURS["bg"],
+                 font=(POLICE, 9), bg=COULEURS["bg"],
                  fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(8, 14))
 
         boutons = tk.Frame(self, bg=COULEURS["bg"])

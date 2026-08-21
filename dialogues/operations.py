@@ -67,11 +67,11 @@ class DialogueMouvement(DialogueBase):
                      bg=COULEURS["bg"], anchor="w").grid(row=r, column=0, sticky="nw", pady=6)
             cadre_dir = tk.Frame(f, bg=COULEURS["bg"])
             cadre_dir.grid(row=r, column=1, columnspan=2, sticky="w", padx=(8, 0), pady=6)
-            tk.Radiobutton(cadre_dir, text="🔴 Réserve (Entrepôt) ➔ 🟢 Rayon (Vente)", variable=self.var_dir, value="vente",
+            tk.Radiobutton(cadre_dir, text="Réserve (Entrepôt) Rayon (Vente)", variable=self.var_dir, value="vente",
                            bg=COULEURS["bg"], font=(POLICE, 10, "bold"), fg=COULEURS["primary"],
                            activebackground=COULEURS["bg"],
                            command=self._maj_info).pack(anchor="w", pady=(0, 4))
-            tk.Radiobutton(cadre_dir, text="🟢 Rayon (Vente) ➔ 🔴 Réserve (Entrepôt)", variable=self.var_dir, value="reserve",
+            tk.Radiobutton(cadre_dir, text="Rayon (Vente) Réserve (Entrepôt)", variable=self.var_dir, value="reserve",
                            bg=COULEURS["bg"], font=(POLICE, 10, "bold"), fg=COULEURS["text"],
                            activebackground=COULEURS["bg"],
                            command=self._maj_info).pack(anchor="w")
@@ -90,11 +90,11 @@ class DialogueMouvement(DialogueBase):
         self.e_notes = self.champ(f, r, "Motif / Notes", ""); r += 1
 
         if type_mvt == "correction":
-            tk.Label(f, text="ℹ️ Saisissez le stock physiquement compté pour l'emplacement sélectionné.",
+            tk.Label(f, text="ℹ Saisissez le stock physiquement compté pour l'emplacement sélectionné.",
                      font=(POLICE, 9), bg=COULEURS["bg"], fg=COULEURS["text_secondary"],
                      justify="left").grid(row=r, column=0, columnspan=2, sticky="w", pady=4)
         elif type_mvt == "transfert":
-            tk.Label(f, text="ℹ️ Transférer des pièces entre l'entrepôt (réserve) et les rayons du magasin.",
+            tk.Label(f, text="ℹ Transférer des pièces entre l'entrepôt (réserve) et les rayons du magasin.",
                      font=(POLICE, 9), bg=COULEURS["bg"], fg=COULEURS["text_secondary"],
                      justify="left").grid(row=r, column=0, columnspan=2, sticky="w", pady=4)
 
@@ -233,7 +233,7 @@ class DialoguePaiement(DialogueBase):
         self.cb_client.set("Client de passage")
         self.cb_client.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(0, 2))
         f.columnconfigure(2, weight=1)
-        self.lbl_dette = tk.Label(f, text="", font=(POLICE, 8), bg=COULEURS["bg"],
+        self.lbl_dette = tk.Label(f, text="", font=(POLICE, 9), bg=COULEURS["bg"],
                                   fg=COULEURS["warning"], anchor="w")
         self.lbl_dette.grid(row=2, column=0, columnspan=3, sticky="w")
 
@@ -250,7 +250,7 @@ class DialoguePaiement(DialogueBase):
             tk.Label(infos, text=l["nom"], font=(POLICE, 10, "bold"),
                      bg=bg_ligne, fg=COULEURS["text"]).pack(anchor="w")
             qte_pu = "Qte %d x %s" % (l["quantite"], fmt_money(l["pu"], self.devise))
-            tk.Label(infos, text=qte_pu, font=(POLICE, 8),
+            tk.Label(infos, text=qte_pu, font=(POLICE, 9),
                      bg=bg_ligne, fg=COULEURS["text_secondary"]).pack(anchor="w")
 
             ctrl = tk.Frame(lf, bg=bg_ligne)
@@ -295,7 +295,7 @@ class DialoguePaiement(DialogueBase):
             row=sep_row + 2, column=0, sticky="w", pady=(4, 2))
         cadre_paye = tk.Frame(f, bg=COULEURS["bg"])
         cadre_paye.grid(row=sep_row + 2, column=1, columnspan=2, sticky="w", padx=(8, 0))
-        self.e_paye = tk.Entry(cadre_paye, font=(POLICE, 15, "bold"), width=12,
+        self.e_paye = tk.Entry(cadre_paye, font=(POLICE, 16, "bold"), width=12,
                                bd=1, relief=tk.SOLID, justify="right",
                                bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
                                insertbackground=COULEURS["input_fg"])
@@ -426,10 +426,10 @@ class DialoguePaiement(DialogueBase):
                 txt = "Credit: choisissez un client enregistre"
             self.lbl_rendu.configure(text=txt, fg=COULEURS["warning"])
         elif rendu >= 0:
-            self.lbl_rendu.configure(text="Monnaie a rendre: " + fmt_money(rendu, devise),
+            self.lbl_rendu.configure(text="Monnaie a rendre:" + fmt_money(rendu, devise),
                                      fg=COULEURS["success"])
         else:
-            self.lbl_rendu.configure(text="Manque " + fmt_money(-rendu, devise),
+            self.lbl_rendu.configure(text="Manque" + fmt_money(-rendu, devise),
                                      fg=COULEURS["danger"])
 
     def valider(self) -> None:
@@ -530,7 +530,7 @@ class DemanderMontant(simpledialog.Dialog):
         self.e_ref.grid(row=3, column=1, sticky="w", padx=8, pady=4, ipady=2)
         if self.montant_max:
             tk.Label(master, text=f"Maximum : {fmt_money(self.montant_max)}",
-                     font=(POLICE, 8), bg=COULEURS["card"],
+                     font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"]).grid(
                 row=4, column=0, columnspan=2, sticky="w", pady=(6, 0))
         return self.e_montant
@@ -584,9 +584,9 @@ class DialoguePaiementSimple(DialogueBase):
                  fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(0, 6))
 
         # ── Prix vendu ──
-        tk.Label(f, text="Prix vendu net (F CFA)", font=(POLICE, 11, "bold"),
+        tk.Label(f, text="Prix vendu net (F CFA)", font=(POLICE, 12, "bold"),
                  bg=COULEURS["bg"], fg=COULEURS["primary"]).pack(anchor="w")
-        self.e_prix_vendu = tk.Entry(f, font=(POLICE, 18, "bold"), width=14,
+        self.e_prix_vendu = tk.Entry(f, font=(POLICE, 20, "bold"), width=14,
                                      bd=2, relief=tk.SOLID, justify="center",
                                      bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
                                      insertbackground=COULEURS["input_fg"])
@@ -632,7 +632,7 @@ class DialoguePaiementSimple(DialogueBase):
         self.cb_client.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.cb_client.bind("<<ComboboxSelected>>", lambda e: self._maj_ui())
 
-        Bouton(f_cl_input, "➕ Nouveau Client", "secondary", self._nouveau_client_rapide, petit=True).pack(side=tk.RIGHT, padx=(6, 0))
+        Bouton(f_cl_input, "Nouveau Client", "secondary", self._nouveau_client_rapide, petit=True).pack(side=tk.RIGHT, padx=(6, 0))
 
         self.lbl_credit_warn = tk.Label(self._frame_client, text="", font=(POLICE, 9, "bold"),
                                         bg=COULEURS["bg"], fg=COULEURS["warning"])
@@ -684,7 +684,7 @@ class DialoguePaiementSimple(DialogueBase):
         if prix > 0 and self._cout_total > 0 and prix < self._cout_total:
             perte = self._cout_total - prix
             self.lbl_alerte.configure(
-                text=f"⚠️ Sous le coût ({fmt_money(self._cout_total, self.devise)}) — Perte : {fmt_money(perte, self.devise)}")
+                text=f"⚠ Sous le coût ({fmt_money(self._cout_total, self.devise)}) — Perte : {fmt_money(perte, self.devise)}")
         else:
             self.lbl_alerte.configure(text="")
 
@@ -694,7 +694,7 @@ class DialoguePaiementSimple(DialogueBase):
 
         if mode == "Crédit":
             if not client:
-                self.lbl_credit_warn.configure(text="⚠️ Vente à crédit exige de sélectionner ou créer un client !", fg=COULEURS["danger"])
+                self.lbl_credit_warn.configure(text="⚠ Vente à crédit exige de sélectionner ou créer un client !", fg=COULEURS["danger"])
             else:
                 solde = float(client.get("solde_creances", 0) or client.get("dette", 0) or 0)
                 txt = f"Vente à crédit attribuée à « {client['nom']} »"

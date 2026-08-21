@@ -20,11 +20,11 @@ class DashboardMixin:
     """
 
     def afficher_dashboard(self):
-        self._nouvelle_page("📊 Tableau de bord", 0)
-        Bouton(self.zone_actions, "🔄 Actualiser", "secondary",
+        self._nouvelle_page("Tableau de bord", 0)
+        Bouton(self.zone_actions, "Actualiser", "secondary",
                self.afficher_dashboard, petit=True).pack(side=tk.LEFT, padx=3)
         if self.peut("rapports"):
-            Bouton(self.zone_actions, "📄 Bon de réappro", "warning",
+            Bouton(self.zone_actions, "Bon de réappro", "warning",
                    self.generer_reappro, petit=True).pack(side=tk.LEFT, padx=3)
 
         s = db.get_dashboard_stats()
@@ -41,7 +41,7 @@ class DashboardMixin:
 
     def _afficher_guide_demarrage(self):
         """Guide pas-a-pas affiche au premier lancement (0 vente, <=5 produits demo)."""
-        guide = Carte(self.zone, "🚀 Bienvenue sur SOPAUTO — Guide de demarrage")
+        guide = Carte(self.zone, "Bienvenue sur SOPAUTO — Guide de demarrage")
         guide.pack(fill=tk.X, pady=(0, 12))
         c = guide.corps
         etapes = [
@@ -62,7 +62,7 @@ class DashboardMixin:
         # Bouton pour ne plus afficher
         cadre_ok = tk.Frame(c, bg=COULEURS["card"])
         cadre_ok.pack(fill=tk.X, pady=(8, 0))
-        Bouton(cadre_ok, "👍 J'ai compris, commencer", "success",
+        Bouton(cadre_ok, "J'ai compris, commencer", "success",
                lambda: (guide.pack_forget(),
                         db.set_parametre("guide_vu", "1")),
                petit=True).pack(side=tk.LEFT)
@@ -107,7 +107,7 @@ class DashboardMixin:
                 canvas.create_line(marge_g, y, largeur - marge_d, y,
                                    fill=COULEURS["canvas_grid"])
                 if frac in (0, 0.5, 1):
-                    canvas.create_text(marge_g - 8, y, anchor="e", font=(POLICE, 7),
+                    canvas.create_text(marge_g - 8, y, anchor="e", font=(POLICE, 9),
                                        fill=COULEURS["text_secondary"],
                                        text=fmt_money(maxi * frac))
 
@@ -126,13 +126,11 @@ class DashboardMixin:
                     x1 = cx + w_barre / 2
 
                     est_auj = (jour == aujourd_hui)
-                    couleur_barre = COULEURS["primary"] if est_auj else COULEURS.get("graph_line", "#4f46e5")
+                    couleur_barre = COULEURS["primary"] if est_auj else COULEURS["graph_line"]
 
                     # Barre principale
                     if h_barre > 0:
                         canvas.create_rectangle(x0, y0, x1, y1, fill=couleur_barre, outline="", tags=f"b_{i}")
-                        # Ligne supérieure de brillance
-                        canvas.create_line(x0, y0, x1, y0, fill="#ffffff", width=2, tags=f"b_{i}")
                     else:
                         # Baseline discrète si 0 CA
                         canvas.create_rectangle(x0, y1 - 3, x1, y1, fill=COULEURS["border"], outline="")
@@ -140,13 +138,13 @@ class DashboardMixin:
                     # Label de valeur sur la barre
                     if valeur > 0:
                         canvas.create_text(cx, y0 - 10, text=fmt_money(valeur),
-                                           font=(POLICE, 7, "bold"), fill=COULEURS["text"])
+                                           font=(POLICE, 9), fill=COULEURS["text"])
 
                     # Étiquette de date sous la barre
                     fmt = "%a %d" if titre_court else "%d/%m"
                     etiquette = datetime.strptime(jour, "%Y-%m-%d").strftime(fmt)
                     canvas.create_text(cx, marge_h + zone_h + 14, text=etiquette.capitalize(),
-                                       font=(POLICE, 8, "bold" if est_auj else "normal"),
+                                       font=(POLICE, 9, "bold" if est_auj else "normal"),
                                        fill=COULEURS["primary"] if est_auj else COULEURS["text_secondary"])
 
                     points.append((cx, y0, jour, valeur, x0, x1, y1))
@@ -163,7 +161,7 @@ class DashboardMixin:
                     points.append((x, y, jour, valeur, x - 5, x + 5, y))
                 etat["points"] = points
 
-                couleur = COULEURS.get("graph_line", COULEURS["primary"])
+                couleur = COULEURS["graph_line"]
                 if len(points) > 1:
                     polygone = [marge_g, marge_h + zone_h]
                     for x, y, _, _, _, _, _ in points:
@@ -184,11 +182,11 @@ class DashboardMixin:
                                        fill=COULEURS["card"], outline=couleur, width=2 if est_auj else 1.5)
                     if valeur and (est_auj or valeur == maxi):
                         canvas.create_text(x, y - 12, text=fmt_money(valeur),
-                                           font=(POLICE, 7, "bold"), fill=COULEURS["text"])
+                                           font=(POLICE, 9), fill=COULEURS["text"])
                     fmt = "%a %d" if titre_court else "%d/%m"
                     etiquette = datetime.strptime(jour, "%Y-%m-%d").strftime(fmt)
                     canvas.create_text(x, marge_h + zone_h + 14, text=etiquette.capitalize(),
-                                       font=(POLICE, 8, "bold" if est_auj else "normal"),
+                                       font=(POLICE, 9, "bold" if est_auj else "normal"),
                                        fill=couleur if est_auj else COULEURS["text_secondary"])
 
         def survol(event):
@@ -207,7 +205,7 @@ class DashboardMixin:
             bx = min(max(x, largeur_txt / 2 + 4), (canvas.winfo_width() or 900) - largeur_txt / 2 - 4)
             canvas.create_rectangle(bx - largeur_txt / 2, 2, bx + largeur_txt / 2, 18,
                                     fill=COULEURS["tooltip_bg"], outline="", tags="survol")
-            canvas.create_text(bx, 10, text=libelle, font=(POLICE, 7, "bold"),
+            canvas.create_text(bx, 10, text=libelle, font=(POLICE, 9),
                                fill="#ffffff", tags="survol")
 
         def quitter_survol(_event=None):
@@ -246,36 +244,41 @@ class DashboardMixin:
         d_jour = delta_txt(s["ventes_aujourdhui"], s["ventes_hier"])
         d_sem = delta_txt(s["ventes_semaine"], s["ventes_semaine_prec"])
         d_mois = delta_txt(s["ventes_mois"], s["ventes_mois_prec"])
+        # `couleur` ne sert plus qu'a signaler : elle vaut None pour une tuile
+        # neutre. Six bandeaux de six couleurs differentes ne hierarchisaient
+        # rien — l'oeil ne savait pas laquelle regarder en premier.
         cartes = [
-            ("💰", "Ventes du jour", fmt_money(s["ventes_aujourdhui"], self.devise),
-             f"{s['nb_ventes_aujourdhui']} vente(s)", COULEURS["success"], d_jour),
-            ("🗓️", "7 derniers jours", fmt_money(s["ventes_semaine"], self.devise),
-             "vs 7 jours précédents", COULEURS["info"], d_sem),
-            ("📅", "Ventes du mois", fmt_money(s["ventes_mois"], self.devise),
-             f"marge {fmt_money(s['marge_mois'], self.devise)}", COULEURS["primary"], d_mois),
-            ("🏷️", "Valeur du stock", fmt_money(s["valeur_stock"], self.devise),
-             f"revente {fmt_money(s['valeur_stock_vente'], self.devise)}", COULEURS["info"], None),
-            ("⚠️", "Alertes stock", f"{s['nb_alertes']}",
+            ("Ventes du jour", fmt_money(s["ventes_aujourdhui"], self.devise),
+             f"{s['nb_ventes_aujourdhui']} vente(s)", None, d_jour),
+            ("7 derniers jours", fmt_money(s["ventes_semaine"], self.devise),
+             "vs 7 jours précédents", None, d_sem),
+            ("Ventes du mois", fmt_money(s["ventes_mois"], self.devise),
+             f"marge {fmt_money(s['marge_mois'], self.devise)}", None, d_mois),
+            ("Valeur du stock", fmt_money(s["valeur_stock"], self.devise),
+             f"revente {fmt_money(s['valeur_stock_vente'], self.devise)}", None, None),
+            ("Alertes stock", f"{s['nb_alertes']}",
              f"{s['nb_ruptures']} rupture(s)",
-             COULEURS["danger"] if s["nb_alertes"] else COULEURS["success"], None),
-            ("📦", "Produits actifs", f"{s['total_produits']}",
-             f"{s['stock_total']} unité(s)", COULEURS["secondary"], None),
+             COULEURS["danger"] if s["nb_alertes"] else None, None),
+            ("Produits actifs", f"{s['total_produits']}",
+             f"{s['stock_total']} unité(s)", None, None),
         ]
-        for icone, titre, valeur, sous, couleur, delta in cartes:
-            c = tk.Frame(kpis, bg=COULEURS["card"],
-                         highlightbackground=COULEURS["border"], highlightthickness=1, padx=0, pady=0)
+        for titre, valeur, sous, couleur, delta in cartes:
+            c = tk.Frame(kpis, bg=COULEURS["card"], padx=0, pady=0)
             c.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
-            tk.Frame(c, bg=couleur, height=4).pack(fill=tk.X)
-            interieur = tk.Frame(c, bg=COULEURS["card"], padx=14, pady=10)
+            interieur = tk.Frame(c, bg=COULEURS["card"], padx=14, pady=12)
             interieur.pack(fill=tk.BOTH, expand=True)
-            tk.Label(interieur, text=f"{icone} {titre}", font=(POLICE, 9),
-                     bg=COULEURS["card"], fg=couleur).pack(anchor="w")
-            tk.Label(interieur, text=valeur, font=(POLICE, 18, "bold"),
-                     bg=COULEURS["card"], fg=COULEURS["text"]).pack(anchor="w", pady=(2, 0))
-            tk.Label(interieur, text=sous, font=(POLICE, 8),
+            # Pas de capitales : six libelles en majuscules au-dessus de six
+            # chiffres, c'est le « kicker » decoratif — la casse normale se lit
+            # mieux et la hierarchie est deja portee par la taille.
+            tk.Label(interieur, text=titre, font=(POLICE, 9),
+                     bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w")
+            tk.Label(interieur, text=valeur, font=(POLICE, 20, "bold"),
+                     bg=COULEURS["card"],
+                     fg=couleur or COULEURS["text"]).pack(anchor="w", pady=(2, 0))
+            tk.Label(interieur, text=sous, font=(POLICE, 9),
                      bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w")
             if delta:
-                tk.Label(interieur, text=delta[0], font=(POLICE, 8, "bold"),
+                tk.Label(interieur, text=delta[0], font=(POLICE, 9),
                          bg=COULEURS["card"], fg=delta[1]).pack(anchor="w")
 
 
@@ -295,9 +298,9 @@ class DashboardMixin:
         pct = min(s["ventes_mois"] / objectif * 100, 100)
         atteint = s["ventes_mois"] >= objectif
         tk.Label(interieur,
-                 text=f"🎯 Objectif du mois : {fmt_money(s['ventes_mois'], self.devise)} / "
+                 text=f"Objectif du mois : {fmt_money(s['ventes_mois'], self.devise)} /"
                       f"{fmt_money(objectif, self.devise)}  ({pct:.0f} %)"
-                      + ("  ✅ Objectif atteint !" if atteint else ""),
+                      + ("Objectif atteint !" if atteint else ""),
                  font=(POLICE, 10, "bold"), bg=COULEURS["card"],
                  fg=COULEURS["success"] if atteint else COULEURS["text"]).pack(anchor="w")
         barre = tk.Frame(interieur, bg=COULEURS["heading"], height=12)
@@ -317,20 +320,20 @@ class DashboardMixin:
         milieu = tk.Frame(self.zone, bg=COULEURS["bg"])
         milieu.pack(fill=tk.X, pady=(0, 8))
         mode = getattr(self, "_type_graphe_dashboard", "barres")
-        titre_g = "📊 Histogramme du CA — 7 derniers jours" if mode == "barres" else "📈 Courbe du CA — 7 derniers jours"
+        titre_g = "Histogramme du CA — 7 derniers jours" if mode == "barres" else "Courbe du CA — 7 derniers jours"
         graphe = Carte(milieu, titre_g)
         graphe.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
 
         if hasattr(graphe, 'entete'):
-            lbl_bt = "📈 Voir en courbe" if mode == "barres" else "📊 Voir en histogramme"
+            lbl_bt = "Voir en courbe" if mode == "barres" else "Voir en histogramme"
             Bouton(graphe.entete, lbl_bt, "primary",
                    self._basculer_type_graphe, petit=True, outline=True).pack(side=tk.RIGHT, padx=4)
 
         self._dessiner_graphe(graphe.corps, s["ventes_7j"])
-        c_activite = Carte(milieu, "📊 Activité du mois")
+        c_activite = Carte(milieu, "Activité du mois")
         c_activite.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
         act = c_activite.corps
-        tk.Label(act, text="Par vendeur", font=(POLICE, 9, "bold"),
+        tk.Label(act, text="Par vendeur", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w")
         tv = ttk.Treeview(act, show="headings", height=4,
                           columns=("vendeur", "nb", "ca", "panier"))
@@ -345,7 +348,7 @@ class DashboardMixin:
             tv.insert("", tk.END, values=(v["vendeur"], v["nb"],
                                           fmt_money(v["ca"]), fmt_money(v["panier"])))
         tv.pack(fill=tk.X)
-        tk.Label(act, text="Par mode de paiement", font=(POLICE, 9, "bold"),
+        tk.Label(act, text="Par mode de paiement", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(anchor="w", pady=(8, 0))
         tp = ttk.Treeview(act, show="headings", height=4,
                           columns=("mode", "nb", "ca"))
@@ -364,7 +367,7 @@ class DashboardMixin:
         """Alertes, top ventes, dernières ventes."""
         bas = tk.Frame(self.zone, bg=COULEURS["bg"])
         bas.pack(fill=tk.BOTH, expand=True)
-        c_alertes = Carte(bas, f"🚨 Alertes de stock ({s['nb_alertes']})")
+        c_alertes = Carte(bas, f"Alertes de stock ({s['nb_alertes']})")
         c_alertes.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 4))
         if s["alertes_stock"]:
             t = TableauTriable(c_alertes.corps, [
@@ -384,10 +387,10 @@ class DashboardMixin:
                 t.bind("<Double-1>", lambda e: self._entree_rapide(t))
                 infobulle(t, "Double-clic : entrée de stock rapide")
         else:
-            tk.Label(c_alertes.corps, text="✅ Tous les stocks sont suffisants",
+            tk.Label(c_alertes.corps, text="Tous les stocks sont suffisants",
                      font=(POLICE, 10, "bold"), bg=COULEURS["card"],
                      fg=COULEURS["success"]).pack(pady=25)
-        c_top = Carte(bas, "🏆 Top ventes (30 jours)")
+        c_top = Carte(bas, "Top ventes (30 jours)")
         c_top.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
         if s["top_produits"]:
             t = TableauTriable(c_top.corps, [
@@ -400,7 +403,7 @@ class DashboardMixin:
         else:
             tk.Label(c_top.corps, text="Aucune vente sur 30 jours", font=(POLICE, 10),
                      bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(pady=25)
-        c_ventes = Carte(bas, "🧾 Dernières ventes")
+        c_ventes = Carte(bas, "Dernières ventes")
         c_ventes.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
         if s["dernieres_ventes"]:
             t = TableauTriable(c_ventes.corps, [
@@ -441,7 +444,7 @@ class DashboardMixin:
         if not alertes:
             return
 
-        carte = Carte(self.zone, f"💰 Signaux commerciaux ({len(alertes)}) — "
+        carte = Carte(self.zone, f"Signaux commerciaux ({len(alertes)}) —"
                                  f"cliquez pour ouvrir l'analyse (F10)")
         carte.pack(fill=tk.X, pady=(8, 0))
 
@@ -453,7 +456,7 @@ class DashboardMixin:
             couleur = couleurs.get(a["niveau"], COULEURS["text_secondary"])
             tk.Label(ligne, text="●", font=(POLICE, 12), bg=COULEURS["card"],
                      fg=couleur).pack(side=tk.LEFT, padx=(0, 6))
-            tk.Label(ligne, text=a["categorie"], font=(POLICE, 9, "bold"),
+            tk.Label(ligne, text=a["categorie"], font=(POLICE, 9),
                      bg=COULEURS["card"], fg=couleur, width=22,
                      anchor="w").pack(side=tk.LEFT)
             tk.Label(ligne, text=a["titre"], font=(POLICE, 9), bg=COULEURS["card"],
@@ -465,7 +468,7 @@ class DashboardMixin:
             tk.Label(carte.corps,
                      text=f"… et {len(alertes) - 4} autre(s) signal(aux) — "
                           f"voir l'écran Analyse",
-                     font=(POLICE, 8), bg=COULEURS["card"],
+                     font=(POLICE, 9), bg=COULEURS["card"],
                      fg=COULEURS["text_secondary"], cursor="hand2").pack(
                 anchor="w", pady=(4, 0))
 

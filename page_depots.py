@@ -19,13 +19,13 @@ class DepotsMixin:
     def afficher_depots(self):
         if not self.peut("stock"):
             return self._refus()
-        self._nouvelle_page("🏬 Dépôts et emplacements", self._idx_menu("Dépôts"))
+        self._nouvelle_page("Dépôts et emplacements", self._idx_menu("Dépôts"))
 
-        Bouton(self.zone_actions, "➕ Nouveau dépôt", "primary",
+        Bouton(self.zone_actions, "Nouveau dépôt", "primary",
                self._nouveau_depot, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🔄 Transférer du stock", "info",
+        Bouton(self.zone_actions, "Transférer du stock", "info",
                self._transferer_stock, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🗑️ Supprimer", "danger",
+        Bouton(self.zone_actions, "Supprimer", "danger",
                self._supprimer_depot, petit=True).pack(side=tk.LEFT, padx=3)
 
         conteneur = tk.Frame(self.zone, bg=COULEURS["bg"])
@@ -62,7 +62,7 @@ class DepotsMixin:
             ("valeur", "Valeur", 105, "e", True),
             ("empl", "Emplacement", 130, "w", False)], height=15)
         ajouter_scrollbars(f_tree_c2, self.tab_depot_contenu)
-        self.lbl_depot_resume = tk.Label(c2.corps, text="", font=(POLICE, 9, "bold"),
+        self.lbl_depot_resume = tk.Label(c2.corps, text="", font=(POLICE, 9),
                                          bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_depot_resume.pack(anchor="w", pady=(6, 0))
 
@@ -78,8 +78,8 @@ class DepotsMixin:
                GROUP BY sd.depot_id""").fetchall()}
         
 
-        types = {"boutique": "🏪 Boutique", "reserve": "📦 Réserve",
-                 "magasin": "🏬 Magasin", "vehicule": "🚚 Véhicule", "autre": "📍 Autre"}
+        types = {"boutique": "Boutique", "reserve": "Réserve",
+                 "magasin": "Magasin", "vehicule": "Véhicule", "autre": "Autre"}
         t = self.tab_depots
         t.delete(*t.get_children())
         for i, d in enumerate(m3.get_depots(actifs_seulement=False)):
@@ -88,7 +88,7 @@ class DepotsMixin:
             t.insert("", tk.END, iid=d["id"], tags=zebre(i, tags), values=(
                 d["code"], d["nom"] + ("" if d["actif"] else " (inactif)"),
                 types.get(d["type"], d["type"]),
-                "✅" if d["autorise_vente"] else "—",
+                "Oui" if d["autorise_vente"] else "—",
                 info.get("nb_articles", 0), fmt_money(info.get("valeur", 0))))
         enfants = t.get_children()
         if enfants:

@@ -17,8 +17,8 @@ class ClientsMixin:
     """
 
     def afficher_clients(self):
-        self._nouvelle_page("👥 Clients", 4)
-        Bouton(self.zone_actions, "➕ Nouveau client", "primary",
+        self._nouvelle_page("Clients", 4)
+        Bouton(self.zone_actions, "Nouveau client", "primary",
                self._nouveau_client, petit=True).pack(side=tk.LEFT, padx=3)
 
         barre = tk.Frame(self.zone, bg=COULEURS["bg"])
@@ -26,7 +26,7 @@ class ClientsMixin:
         self.rech_clients = EntreeRecherche(barre, "Nom, téléphone, véhicule…", 36,
                                             callback=self._charger_clients)
         self.rech_clients.pack(side=tk.LEFT)
-        self.lbl_resume_clients = tk.Label(barre, text="", font=(POLICE, 9, "bold"),
+        self.lbl_resume_clients = tk.Label(barre, text="", font=(POLICE, 9),
                                            bg=COULEURS["bg"], fg=COULEURS["primary"])
         self.lbl_resume_clients.pack(side=tk.RIGHT, padx=8)
 
@@ -44,8 +44,8 @@ class ClientsMixin:
         self.tab_clients.bind("<Double-1>", lambda e: self._modifier_client())
 
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="✏️  Modifier", command=self._modifier_client)
-        menu.add_command(label="🗑️  Supprimer", command=self._supprimer_client)
+        menu.add_command(label="Modifier", command=self._modifier_client)
+        menu.add_command(label="Supprimer", command=self._supprimer_client)
 
         def clic_droit(e):
             iid = self.tab_clients.identify_row(e.y)

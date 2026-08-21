@@ -27,7 +27,7 @@ class DialogueProduit(DialogueBase):
                                   bg=COULEURS["input_bg"], fg=COULEURS["input_fg"])
             self.e_ref.insert(0, str(p.get("reference", "")))
             self.e_ref.grid(row=r, column=1, sticky="ew", padx=(8, 0), pady=3, ipady=3)
-            Bouton(f, "⚡ Générer", "info", self._generer_ref, petit=True).grid(
+            Bouton(f, "Générer", "info", self._generer_ref, petit=True).grid(
                 row=r, column=2, sticky="w", padx=6); r += 1
         else:
             self.e_ref = self.champ(f, r, "Référence *", p.get("reference", ""), aide="unique"); r += 1

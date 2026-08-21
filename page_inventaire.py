@@ -19,15 +19,15 @@ class InventaireMixin:
     def afficher_inventaire(self):
         if not self.peut("stock"):
             return self._refus()
-        self._nouvelle_page("📋 Inventaire physique", self._idx_menu("Inventaire"))
+        self._nouvelle_page("Inventaire physique", self._idx_menu("Inventaire"))
 
-        Bouton(self.zone_actions, "➕ Ouvrir un inventaire", "primary",
+        Bouton(self.zone_actions, "Ouvrir un inventaire", "primary",
                self._ouvrir_inventaire, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🔢 Saisir le comptage", "info",
+        Bouton(self.zone_actions, "Saisir le comptage", "info",
                self._saisir_comptage, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "✅ Clôturer", "success",
+        Bouton(self.zone_actions, "Clôturer", "success",
                self._cloturer_inventaire, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📤 Exporter", "secondary",
+        Bouton(self.zone_actions, "Exporter", "secondary",
                self._exporter_inventaire, petit=True).pack(side=tk.LEFT, padx=3)
 
         conteneur = tk.Frame(self.zone, bg=COULEURS["bg"])
@@ -57,7 +57,7 @@ class InventaireMixin:
                        font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["text"],
                        selectcolor=COULEURS["card"], activebackground=COULEURS["card"],
                        command=self._charger_inv_lignes).pack(side=tk.LEFT)
-        self.lbl_inv_resume = tk.Label(barre2, text="", font=(POLICE, 9, "bold"),
+        self.lbl_inv_resume = tk.Label(barre2, text="", font=(POLICE, 9),
                                        bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_inv_resume.pack(side=tk.RIGHT)
 
@@ -81,8 +81,8 @@ class InventaireMixin:
         self._charger_inventaires()
 
     def _charger_inventaires(self):
-        libelles = {"en_cours": "🔄 En cours", "cloture": "✅ Clôturé",
-                    "annule": "❌ Annulé"}
+        libelles = {"en_cours": "En cours", "cloture": "Clôturé",
+                    "annule": "Annulé"}
         t = self.tab_inventaires
         t.delete(*t.get_children())
         for i, inv in enumerate(m3.get_inventaires()):
@@ -201,7 +201,7 @@ class InventaireMixin:
                    f"{inv['nb_comptes']}/{inv['nb_lignes']} produit(s) compté(s)\n"
                    f"{len(ecarts)} écart(s) — impact {fmt_money(impact, self.devise)}\n")
         if non_comptes:
-            message += (f"\n⚠ {non_comptes} produit(s) NON compté(s) : "
+            message += (f"\n⚠ {non_comptes} produit(s) NON compté(s) :"
                         f"leur stock restera inchangé.\n")
         message += ("\nAppliquer les écarts au stock réel ?\n\n"
                     "• Oui = le stock est ajusté sur le comptage\n"

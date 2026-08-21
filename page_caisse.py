@@ -24,7 +24,7 @@ class DialogueNegociationPrix(tk.Toplevel):
 
     def __init__(self, parent, ligne: dict, client_nom: str = "", client_id: int = None, devise: str = "F CFA"):
         super().__init__(parent)
-        self.title(f"🤝 Négocier le prix — {ligne['nom']}")
+        self.title(f"Négocier le prix — {ligne['nom']}")
         self.geometry("520x480")
         self.minsize(500, 460)
         self.configure(bg=COULEURS["card"])
@@ -75,7 +75,7 @@ class DialogueNegociationPrix(tk.Toplevel):
         # Ligne Catalogue
         r1 = tk.Frame(reperes, bg=COULEURS["row_alt"])
         r1.pack(fill=tk.X, pady=2)
-        tk.Label(r1, text="Prix Catalogue :", font=(POLICE, 9, "bold"),
+        tk.Label(r1, text="Prix Catalogue :", font=(POLICE, 9),
                  bg=COULEURS["row_alt"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT)
         tk.Label(r1, text=fmt_money(self.prix_cat, self.devise), font=(POLICE, 10, "bold"),
                  bg=COULEURS["row_alt"], fg=COULEURS["primary"]).pack(side=tk.RIGHT)
@@ -94,7 +94,7 @@ class DialogueNegociationPrix(tk.Toplevel):
             r3 = tk.Frame(reperes, bg=COULEURS["row_alt"])
             r3.pack(fill=tk.X, pady=2)
             hist_txt = f"Dernier prix ce client ({self.dernier_prix_info.get('date', '')[:10]}) :"
-            tk.Label(r3, text=hist_txt, font=(POLICE, 9, "bold"),
+            tk.Label(r3, text=hist_txt, font=(POLICE, 9),
                      bg=COULEURS["row_alt"], fg=COULEURS["success"]).pack(side=tk.LEFT)
             tk.Label(r3, text=fmt_money(self.dernier_prix_info['prix'], self.devise), font=(POLICE, 10, "bold"),
                      bg=COULEURS["row_alt"], fg=COULEURS["success"]).pack(side=tk.RIGHT)
@@ -108,7 +108,7 @@ class DialogueNegociationPrix(tk.Toplevel):
 
         self.var_nouveau_prix = tk.StringVar(value=f"{int(self.ligne['pu']):d}" if self.ligne['pu'] == int(self.ligne['pu']) else f"{self.ligne['pu']:.2f}")
         self.entry_prix = tk.Entry(cadre_saisie, textvariable=self.var_nouveau_prix,
-                                   font=(POLICE, 14, "bold"), bd=1, relief=tk.SOLID,
+                                   font=(POLICE, 16, "bold"), bd=1, relief=tk.SOLID,
                                    bg=COULEURS["input_bg"], fg=COULEURS["input_fg"],
                                    insertbackground=COULEURS["input_fg"], justify="right")
         self.entry_prix.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=6)
@@ -119,7 +119,7 @@ class DialogueNegociationPrix(tk.Toplevel):
         cadre_remises = tk.Frame(pad_frame, bg=COULEURS["card"])
         cadre_remises.pack(fill=tk.X, pady=(4, 6))
 
-        tk.Label(cadre_remises, text="Remises rapides :", font=(POLICE, 9, "bold"),
+        tk.Label(cadre_remises, text="Remises rapides :", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT, padx=(0, 4))
 
         for pct in (5, 10, 15):
@@ -147,7 +147,7 @@ class DialogueNegociationPrix(tk.Toplevel):
         btn_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=(16, 0))
 
         Bouton(btn_frame, "  Annuler  ", "secondary", self.destroy).pack(side=tk.LEFT)
-        Bouton(btn_frame, "  ✅ Valider le prix  ", "success", self._valider).pack(side=tk.RIGHT)
+        Bouton(btn_frame, "Valider le prix", "success", self._valider).pack(side=tk.RIGHT)
 
         self.bind("<Return>", lambda e: self._valider())
         self.bind("<Escape>", lambda e: self.destroy())
@@ -179,9 +179,9 @@ class DialogueNegociationPrix(tk.Toplevel):
             txt += f"  ·  Écart Cat.: {diff_pct:+.1f}%"
 
         if self.cout > 0 and val < self.cout:
-            self.lbl_marge_preview.configure(text=f"⚠️ Vente à perte ! {txt}", fg=COULEURS["danger"])
+            self.lbl_marge_preview.configure(text=f"⚠ Vente à perte ! {txt}", fg=COULEURS["danger"])
         elif marge_pct >= 20:
-            self.lbl_marge_preview.configure(text=f"✅ {txt}", fg=COULEURS["success"])
+            self.lbl_marge_preview.configure(text=f"{txt}", fg=COULEURS["success"])
         else:
             self.lbl_marge_preview.configure(text=f"● {txt}", fg=COULEURS["warning"])
 
@@ -210,7 +210,7 @@ class CaisseMixin:
     def afficher_caisse(self):
         if not self.peut("caisse"):
             return self._refus()
-        self._nouvelle_page("📝 Enregistrer une vente", 1)
+        self._nouvelle_page("Enregistrer une vente", 1)
 
         self.enregistrement = []       # [{"id","ref","nom","quantite","pu","cout","prix_catalogue"}, ...]
         self._produits_visibles = []   # Cache des suggestions de recherche
@@ -233,7 +233,7 @@ class CaisseMixin:
         col_gauche.columnconfigure(0, weight=1)
 
         # --- Card 1 : Client & Contexte ---
-        carte_client = Carte(col_gauche, "👤 Client & Tarification")
+        carte_client = Carte(col_gauche, "Client & Tarification")
         carte_client.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         cc = carte_client.corps
 
@@ -256,7 +256,7 @@ class CaisseMixin:
         self.cb_client_pos.bind("<<ComboboxSelected>>", self._sur_changement_client)
         self.cb_client_pos.bind("<Return>", self._sur_changement_client)
 
-        Bouton(f_client_select, "➕ Client", "secondary", self._nouveau_client_rapide, petit=True).pack(side=tk.RIGHT, padx=(6, 0))
+        Bouton(f_client_select, "Client", "secondary", self._nouveau_client_rapide, petit=True).pack(side=tk.RIGHT, padx=(6, 0))
 
         # Badge d'état client (créances / infos)
         self.lbl_info_client = tk.Label(cc, text="Client comptant standard (Prix catalogue par défaut)",
@@ -264,7 +264,7 @@ class CaisseMixin:
         self.lbl_info_client.pack(anchor="w", pady=(2, 0))
 
         # --- Card 2 : Saisie & Catalogue Produits ---
-        carte_recherche = Carte(col_gauche, "🔍 Catalogue & Ajout Article")
+        carte_recherche = Carte(col_gauche, "Catalogue & Ajout Article")
         carte_recherche.grid(row=1, column=0, sticky="nsew")
         cr = carte_recherche.corps
         cr.columnconfigure(0, weight=1)
@@ -294,11 +294,11 @@ class CaisseMixin:
         # Champ Quantité
         qte_box = tk.Frame(f_recherche, bg=COULEURS["card"])
         qte_box.grid(row=1, column=1, sticky="e", padx=(8, 0), pady=(4, 0))
-        tk.Label(qte_box, text="Qté:", font=(POLICE, 9, "bold"),
+        tk.Label(qte_box, text="Qté:", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT)
         self.var_qte = tk.StringVar(value="1")
         sp_qte = tk.Spinbox(qte_box, from_=1, to=9999, textvariable=self.var_qte,
-                            font=(POLICE, 11, "bold"), width=4, justify="center")
+                            font=(POLICE, 12, "bold"), width=4, justify="center")
         sp_qte.pack(side=tk.LEFT, padx=4)
 
         # Panneau des suggestions (Listbox enrichie)
@@ -327,7 +327,7 @@ class CaisseMixin:
         col_droite.rowconfigure(0, weight=1)
         col_droite.columnconfigure(0, weight=1)
 
-        carte_panier = Carte(col_droite, "🛒 Enregistrement & Négociation Panier")
+        carte_panier = Carte(col_droite, "Enregistrement & Négociation Panier")
         carte_panier.grid(row=0, column=0, sticky="nsew")
         cp = carte_panier.corps
         cp.columnconfigure(0, weight=1)
@@ -337,11 +337,11 @@ class CaisseMixin:
         actions_panier = tk.Frame(cp, bg=COULEURS["card"])
         actions_panier.grid(row=0, column=0, sticky="ew", pady=(0, 6))
 
-        Bouton(actions_panier, "✏️ Négocier le prix (F2)", "primary", self._negocier_selection, petit=True).pack(side=tk.LEFT, padx=(0, 4))
-        Bouton(actions_panier, "➕ Qté +1", "secondary", lambda: self._ajuster_qte_selection(1), petit=True).pack(side=tk.LEFT, padx=2)
-        Bouton(actions_panier, "➖ Qté -1", "secondary", lambda: self._ajuster_qte_selection(-1), petit=True).pack(side=tk.LEFT, padx=2)
-        Bouton(actions_panier, "🗑️ Supprimer", "danger", self._retirer_ligne_selection, petit=True, outline=True).pack(side=tk.LEFT, padx=6)
-        Bouton(actions_panier, "🧹 Vider tout", "secondary", self._vider_panier, petit=True, outline=True).pack(side=tk.RIGHT)
+        Bouton(actions_panier, "Négocier le prix (F2)", "primary", self._negocier_selection, petit=True).pack(side=tk.LEFT, padx=(0, 4))
+        Bouton(actions_panier, "Qté +1", "secondary", lambda: self._ajuster_qte_selection(1), petit=True).pack(side=tk.LEFT, padx=2)
+        Bouton(actions_panier, "Qté -1", "secondary", lambda: self._ajuster_qte_selection(-1), petit=True).pack(side=tk.LEFT, padx=2)
+        Bouton(actions_panier, "Supprimer", "danger", self._retirer_ligne_selection, petit=True, outline=True).pack(side=tk.LEFT, padx=6)
+        Bouton(actions_panier, "Vider tout", "secondary", self._vider_panier, petit=True, outline=True).pack(side=tk.RIGHT)
 
         # Table du Panier (Treeview modernisé avec colonnes de négociation)
         cadre_tree = tk.Frame(cp, bg=COULEURS["card"])
@@ -358,7 +358,7 @@ class CaisseMixin:
         self.tree_panier.heading("pu", text="Prix Négo", anchor="e")
         self.tree_panier.heading("marge", text="Marge", anchor="center")
         self.tree_panier.heading("total", text="Total Net", anchor="e")
-        self.tree_panier.heading("action", text="Action ✏️", anchor="center")
+        self.tree_panier.heading("action", text="Action", anchor="center")
 
         self.tree_panier.column("#0", width=0, stretch=False)
         self.tree_panier.column("nom", width=180, minwidth=80, anchor="w", stretch=True)
@@ -411,7 +411,7 @@ class CaisseMixin:
         self.lbl_details_panier.pack(side=tk.LEFT)
 
         self.lbl_ecart_negociation = tk.Label(resume_frame, text="Négociation: 0 F CFA",
-                                              font=(POLICE, 9, "bold"), bg=COULEURS["total_bg"], fg=COULEURS["success"])
+                                              font=(POLICE, 9), bg=COULEURS["total_bg"], fg=COULEURS["success"])
         self.lbl_ecart_negociation.pack(side=tk.RIGHT)
 
         # Montant Total Principal
@@ -446,7 +446,7 @@ class CaisseMixin:
         self.lbl_client_attribue.pack(side=tk.LEFT, padx=(6, 0))
 
         # Bouton d'encaissement
-        btn_enreg = Bouton(panneau_total, "✍️  VALIDER ET ENREGISTRER  (F8)", "success",
+        btn_enreg = Bouton(panneau_total, "VALIDER ET ENREGISTRER (F8)", "success",
                            self._enregistrer, pady=12)
         btn_enreg.pack(fill=tk.X)
 
@@ -468,10 +468,10 @@ class CaisseMixin:
             solde = float(client.get("solde_creances", 0) or client.get("dette", 0) or 0)
             txt = f"Client : {client['nom']}"
             if solde > 0:
-                txt += f"  ·  🚨 CRÉANCE EN COURS : {fmt_money(solde, self.devise)}"
+                txt += f"· CRÉANCE EN COURS : {fmt_money(solde, self.devise)}"
                 self.lbl_info_client.configure(text=txt, fg=COULEURS["danger"])
                 messagebox.showwarning(
-                    "🚨 Client en Dette",
+                    "Client en Dette",
                     f"ATTENTION : Le client « {client['nom']} » a déjà une créance impayée de {fmt_money(solde, self.devise)} !\n\n"
                     "Gardez cela à l'esprit avant d'accorder de nouveaux crédits.", parent=self.root)
             else:
@@ -506,7 +506,7 @@ class CaisseMixin:
                 if hasattr(self, 'cb_client_pos'):
                     self.cb_client_pos.set(cle)
                 self._sur_changement_client()
-            self.statut(f"✅ Client {nom.strip()} créé", COULEURS["success"])
+            self.statut(f"Client {nom.strip()} créé", COULEURS["success"])
         else:
             messagebox.showerror("Erreur", msg, parent=self.root)
 
@@ -540,10 +540,10 @@ class CaisseMixin:
                 else:
                     stock_txt = "RAYON RUPTURE"
                 if sr > 0:
-                    stock_txt += f" (📦 Résérve: {sr})"
+                    stock_txt += f" (Réserve: {sr})"
 
                 prix_cat = float(p["prix_vente"])
-                txt_ligne = f" {p['nom'][:30]:<30} │ Cat: {fmt_money(prix_cat, self.devise)} │ {stock_txt}"
+                txt_ligne = f"{p['nom'][:30]:<30} │ Cat: {fmt_money(prix_cat, self.devise)} │ {stock_txt}"
                 lb.insert(tk.END, txt_ligne)
 
     def _focus_listbox(self, event=None):
@@ -618,9 +618,9 @@ class CaisseMixin:
                     if stock_reserve > 0 and (nouvelle_qte - stock_dispo) <= stock_reserve:
                         manquant = nouvelle_qte - stock_dispo
                         if messagebox.askyesno(
-                                "📦 Stock en Réserve Disponible",
+                                "Stock en Réserve Disponible",
                                 f"La quantité en rayon ({stock_dispo}) est insuffisante pour « {produit['nom']} ».\n\n"
-                                f"💡 Vous avez {stock_reserve} pièce(s) disponible(s) en RÉSERVE (ENTREPÔT) !\n\n"
+                                f"Vous avez {stock_reserve} pièce(s) disponible(s) en RÉSERVE (ENTREPÔT) !\n\n"
                                 f"Voulez-vous transférer automatiquement {manquant} pièce(s) de la Réserve vers le Rayon pour valider la vente ?",
                                 parent=self.root):
                             ok_tr, msg_tr = db.transferer_stock_depot(produit_id, manquant, source='reserve', destination='vente')
@@ -628,7 +628,7 @@ class CaisseMixin:
                                 ligne["quantite"] = nouvelle_qte
                                 self.var_qte.set("1")
                                 self._rafraichir_enregistrement()
-                                self.statut(f"✅ Transfert de {manquant} pièce(s) de la réserve vers le rayon effectué", COULEURS["success"])
+                                self.statut(f"Transfert de {manquant} pièce(s) de la réserve vers le rayon effectué", COULEURS["success"])
                                 return
                             else:
                                 messagebox.showerror("Erreur Transfert", msg_tr, parent=self.root)
@@ -647,16 +647,16 @@ class CaisseMixin:
             if stock_reserve > 0 and (qte - stock_dispo) <= stock_reserve:
                 manquant = qte - stock_dispo
                 if messagebox.askyesno(
-                        "📦 Stock en Réserve Disponible",
+                        "Stock en Réserve Disponible",
                         f"La quantité demandée ({qte}) dépasse le stock en rayon ({stock_dispo}) pour « {produit['nom']} ».\n\n"
-                        f"💡 Cependant, vous avez {stock_reserve} pièce(s) en RÉSERVE (ENTREPÔT) !\n\n"
+                        f"Cependant, vous avez {stock_reserve} pièce(s) en RÉSERVE (ENTREPÔT) !\n\n"
                         f"Voulez-vous transférer automatiquement {manquant} pièce(s) de la Réserve vers le Rayon pour ajouter cet article au panier ?",
                         parent=self.root):
                     ok_tr, msg_tr = db.transferer_stock_depot(produit_id, manquant, source='reserve', destination='vente')
                     if ok_tr:
                         # Mettre à jour le stock dispo après transfert
                         stock_dispo += manquant
-                        self.statut(f"✅ Transfert de {manquant} pièce(s) de la réserve vers le rayon effectué", COULEURS["success"])
+                        self.statut(f"Transfert de {manquant} pièce(s) de la réserve vers le rayon effectué", COULEURS["success"])
                     else:
                         messagebox.showerror("Erreur Transfert", msg_tr, parent=self.root)
                         return
@@ -713,7 +713,7 @@ class CaisseMixin:
         produit = db.trouver_produit(ref)
         if produit:
             self._ajouter_produit(produit["id"])
-            self.statut(f"✅ {nom.strip()} ajouté au catalogue", COULEURS["success"])
+            self.statut(f"{nom.strip()} ajouté au catalogue", COULEURS["success"])
 
     # ── Gestion du Panier & Négociation ──
 
@@ -744,7 +744,7 @@ class CaisseMixin:
             marge_pct = (marge_unit / pu_neg * 100) if pu_neg > 0 else 0
 
             if cout > 0 and pu_neg < cout:
-                marge_txt = f"⚠️ {marge_pct:.0f}%"
+                marge_txt = f"⚠ {marge_pct:.0f}%"
                 tags = zebre(i, ["perte"])
             elif marge_pct >= 20:
                 marge_txt = f"▲ {marge_pct:.0f}%"
@@ -760,7 +760,7 @@ class CaisseMixin:
                 fmt_money(pu_neg, self.devise),
                 marge_txt,
                 fmt_money(subtotal_neg, self.devise),
-                "✏️ Modifier"),
+                "Modifier"),
                 tags=tags)
 
         if sel_iid and sel_iid in tree.get_children():
@@ -922,7 +922,7 @@ class CaisseMixin:
             solde = float(client.get("solde_creances", 0) or client.get("dette", 0) or 0)
             if solde > 0 and mode_paiement == db.MODE_CREDIT:
                 if not messagebox.askyesno(
-                        "⚠️ Créance existante",
+                        "⚠ Créance existante",
                         f"Le client « {client['nom']} » a déjà un immatriculé de créances impayées de {fmt_money(solde, self.devise)}.\n\n"
                         "Voulez-vous quand même lui accorder cette nouvelle vente à crédit ?", parent=self.root):
                     return
@@ -974,7 +974,7 @@ class CaisseMixin:
         self.enregistrement.clear()
         self._rafraichir_enregistrement()
         self._maj_badge_alertes()
-        self.statut(f"✅ Vente {message} enregistrée avec succès ({mode_paiement}) !", COULEURS["success"])
+        self.statut(f"Vente {message} enregistrée avec succès ({mode_paiement}) !", COULEURS["success"])
         self._afficher_flash_enregistrement(message, mode_paiement)
         self.e_recherche.focus_set()
         self._sync_cloud()
@@ -984,7 +984,7 @@ class CaisseMixin:
             bandeau = tk.Frame(self.zone, bg=COULEURS["success"], padx=24, pady=12,
                                highlightbackground="white", highlightthickness=2)
             bandeau.place(relx=0.5, rely=0.06, anchor="n")
-            lbl = tk.Label(bandeau, text=f"✅  VENTE {num_vente} ENREGISTRÉE AVEC SUCCÈS ! ({mode})",
+            lbl = tk.Label(bandeau, text=f"VENTE {num_vente} ENREGISTRÉE AVEC SUCCÈS ! ({mode})",
                            font=(POLICE, 12, "bold"), bg=COULEURS["success"], fg="white")
             lbl.pack()
             self.root.after(2400, lambda: bandeau.destroy() if bandeau.winfo_exists() else None)

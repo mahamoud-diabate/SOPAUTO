@@ -71,7 +71,7 @@ class DialogueDepot(_Base):
                 row=7, column=0, columnspan=2, sticky="w")
         tk.Label(master, text="Un dépôt « réserve » sert au stockage : le stock n'y est\n"
                               "pas vendable tant qu'il n'est pas transféré en boutique.",
-                 font=(POLICE, 8), bg=COULEURS["card"],
+                 font=(POLICE, 9), bg=COULEURS["card"],
                  fg=COULEURS["text_secondary"], justify="left").grid(
             row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
         return self.e_code
@@ -234,9 +234,9 @@ class DialogueCommande(_Base):
         self.e_pu = tk.Entry(ajout, font=(POLICE, 9), width=10, bd=1, relief=tk.SOLID,
                              justify="right")
         self.e_pu.pack(side=tk.LEFT, padx=4)
-        Bouton(ajout, "➕ Ajouter", "success", self._ajouter_ligne,
+        Bouton(ajout, "Ajouter", "success", self._ajouter_ligne,
                petit=True).pack(side=tk.LEFT, padx=8)
-        Bouton(ajout, "🗑️ Retirer", "danger", self._retirer_ligne,
+        Bouton(ajout, "Retirer", "danger", self._retirer_ligne,
                petit=True).pack(side=tk.LEFT)
 
         # ── Tableau des lignes ──
@@ -309,7 +309,7 @@ class DialogueCommande(_Base):
                 fmt_money(l["qte"] * l["pu"])))
         frais = parse_float(self.e_frais.get(), 0)
         self.lbl_total.configure(
-            text=f"Articles : {fmt_money(total, self.devise)}  +  "
+            text=f"Articles : {fmt_money(total, self.devise)} +"
                  f"frais {fmt_money(frais, self.devise)}  =  "
                  f"{fmt_money(total + frais, self.devise)}")
 
@@ -373,9 +373,9 @@ class DialogueReception(_Base):
             e.grid(row=r, column=3, padx=4, pady=2, ipady=2)
             self.entrees[l["id"]] = e
 
-        tk.Label(master, text="⚠ La réception met à jour le CUMP (coût moyen pondéré) "
+        tk.Label(master, text="⚠ La réception met à jour le CUMP (coût moyen pondéré)"
                               "et donc la valeur de votre stock.",
-                 font=(POLICE, 8), bg=COULEURS["card"], fg=COULEURS["warning"],
+                 font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["warning"],
                  justify="left").grid(row=3 + len(self.lignes), column=0, columnspan=4,
                                       sticky="w", pady=(10, 0))
         return None
@@ -426,7 +426,7 @@ class DialogueOuvrirInventaire(_Base):
 
         tk.Label(master, text="Le stock théorique de chaque produit est figé à l'ouverture.\n"
                               "Vous comptez ensuite physiquement, puis vous clôturez.",
-                 font=(POLICE, 8), bg=COULEURS["card"], fg=COULEURS["text_secondary"],
+                 font=(POLICE, 9), bg=COULEURS["card"], fg=COULEURS["text_secondary"],
                  justify="left").grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
         return self.cb_depot
 
@@ -447,17 +447,17 @@ class DialogueComptage(_Base):
         master.configure(bg=COULEURS["card"])
         l = self.ligne
         tk.Label(master, text=f"{l['reference']} — {l['produit_nom']}",
-                 font=(POLICE, 11, "bold"), bg=COULEURS["card"],
+                 font=(POLICE, 12, "bold"), bg=COULEURS["card"],
                  fg=COULEURS["text"]).grid(row=0, column=0, columnspan=2,
                                            sticky="w", pady=(0, 4))
-        tk.Label(master, text=f"Stock théorique : {l['stock_theorique']}   ·   "
+        tk.Label(master, text=f"Stock théorique : {l['stock_theorique']} ·"
                               f"Emplacement : {l['emplacement'] or '—'}",
                  font=(POLICE, 9), bg=COULEURS["card"],
                  fg=COULEURS["text_secondary"]).grid(row=1, column=0, columnspan=2,
                                                      sticky="w", pady=(0, 10))
 
         self._label(master, "Quantité comptée", 2)
-        self.e_compte = tk.Entry(master, font=(POLICE, 14, "bold"), width=10, bd=1,
+        self.e_compte = tk.Entry(master, font=(POLICE, 16, "bold"), width=10, bd=1,
                                  relief=tk.SOLID, justify="center")
         valeur = l["stock_compte"] if l["stock_compte"] is not None else l["stock_theorique"]
         self.e_compte.insert(0, str(valeur))
@@ -474,7 +474,7 @@ class DialogueComptage(_Base):
         self._label(master, "Notes", 4)
         self.e_notes = self._entree(master, 4, 28, l["notes"] or "")
 
-        self.lbl_ecart = tk.Label(master, text="", font=(POLICE, 11, "bold"),
+        self.lbl_ecart = tk.Label(master, text="", font=(POLICE, 12, "bold"),
                                   bg=COULEURS["card"])
         self.lbl_ecart.grid(row=5, column=0, columnspan=2, sticky="w", pady=(8, 0))
         self._maj_ecart()
@@ -487,11 +487,11 @@ class DialogueComptage(_Base):
         ecart = int(compte) - self.ligne["stock_theorique"]
         valeur = ecart * (self.ligne["cump_unitaire"] or 0)
         if ecart == 0:
-            self.lbl_ecart.configure(text="✅ Conforme au stock théorique",
+            self.lbl_ecart.configure(text="Conforme au stock théorique",
                                      fg=COULEURS["success"])
         else:
             self.lbl_ecart.configure(
-                text=f"{'📈' if ecart > 0 else '📉'} Écart {ecart:+d} "
+                text=f"{'' if ecart > 0 else ''} Écart {ecart:+d}"
                      f"→ {fmt_money(valeur)}",
                 fg=COULEURS["warning"] if ecart > 0 else COULEURS["danger"])
 

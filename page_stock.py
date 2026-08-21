@@ -28,22 +28,22 @@ class StockMixin:
     def afficher_stock(self):
         if not self.peut("stock"):
             return self._refus()
-        self._nouvelle_page("📋 Gestion des stocks & Mouvements", 3)
+        self._nouvelle_page("Gestion des stocks & Mouvements", 3)
 
         self._filtre_statut = "tous"  # tous | alerte | rupture | ok
 
         # ── Actions dans l'en-tête de page ──
-        Bouton(self.zone_actions, "📥 Entrée", "success",
+        Bouton(self.zone_actions, "Entrée", "success",
                lambda: self._mouvement("entree"), petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📤 Sortie", "danger",
+        Bouton(self.zone_actions, "Sortie", "danger",
                lambda: self._mouvement("sortie"), petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🔄 Transfert", "info",
+        Bouton(self.zone_actions, "Transfert", "info",
                self._ouvrir_transfert, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🔧 Inventaire", "warning",
+        Bouton(self.zone_actions, "Inventaire", "warning",
                lambda: self._mouvement("correction"), petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📄 Bon de réappro", "secondary",
+        Bouton(self.zone_actions, "Bon de réappro", "secondary",
                self.generer_reappro, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📊 Exporter CSV", "secondary",
+        Bouton(self.zone_actions, "Exporter CSV", "secondary",
                self._exporter_stock_csv, petit=True, outline=True).pack(side=tk.LEFT, padx=3)
 
         # ── Conteneur principal ──
@@ -65,7 +65,7 @@ class StockMixin:
         self.rech_stock.pack(side=tk.LEFT, padx=(0, 10))
 
         # Filtre Catégorie
-        tk.Label(cf, text="Catégorie:", font=(POLICE, 9, "bold"),
+        tk.Label(cf, text="Catégorie:", font=(POLICE, 9),
                  bg=COULEURS["card"], fg=COULEURS["text_secondary"]).pack(side=tk.LEFT, padx=(6, 4))
 
         cats = db.get_categories()
@@ -86,14 +86,14 @@ class StockMixin:
         self.btn_f_tous = Bouton(f_pilules, "Tous", "primary", lambda: self._changer_filtre_statut("tous"), petit=True)
         self.btn_f_tous.pack(side=tk.LEFT, padx=2)
 
-        self.btn_f_alerte = Bouton(f_pilules, "🟠 Alerte", "warning", lambda: self._changer_filtre_statut("alerte"), petit=True, outline=True)
+        self.btn_f_alerte = Bouton(f_pilules, "Alerte", "warning", lambda: self._changer_filtre_statut("alerte"), petit=True, outline=True)
         self.btn_f_alerte.pack(side=tk.LEFT, padx=2)
 
-        self.btn_f_rupture = Bouton(f_pilules, "🔴 Rupture", "danger", lambda: self._changer_filtre_statut("rupture"), petit=True, outline=True)
+        self.btn_f_rupture = Bouton(f_pilules, "Rupture", "danger", lambda: self._changer_filtre_statut("rupture"), petit=True, outline=True)
         self.btn_f_rupture.pack(side=tk.LEFT, padx=2)
 
         # Label Récapitulatif à droite
-        self.lbl_resume_stock = tk.Label(cf, text="", font=(POLICE, 9, "bold"),
+        self.lbl_resume_stock = tk.Label(cf, text="", font=(POLICE, 9),
                                          bg=COULEURS["card"], fg=COULEURS["primary"])
         self.lbl_resume_stock.pack(side=tk.RIGHT, padx=6)
 
@@ -153,10 +153,10 @@ class StockMixin:
         nb_ruptures = sum(1 for p in prods if p.get("stock", 0) <= 0)
 
         kpis_data = [
-            ("🏷️", fmt_money(valeur_cump, self.devise), "Valeur au Coût (CUMP)", COULEURS["primary"]),
-            ("💰", fmt_money(valeur_vente, self.devise), "Valeur Revente estimée", COULEURS["success"]),
-            ("📈", fmt_money(marge_potentielle, self.devise), "Marge théorique stock", COULEURS["info"]),
-            ("⚠️", f"{nb_alertes} alerte(s)", f"dont {nb_ruptures} rupture(s)", COULEURS["danger"] if nb_alertes > 0 else COULEURS["success"]),
+            ("", fmt_money(valeur_cump, self.devise), "Valeur au Coût (CUMP)", COULEURS["primary"]),
+            ("", fmt_money(valeur_vente, self.devise), "Valeur Revente estimée", COULEURS["success"]),
+            ("", fmt_money(marge_potentielle, self.devise), "Marge théorique stock", COULEURS["info"]),
+            ("⚠", f"{nb_alertes} alerte(s)", f"dont {nb_ruptures} rupture(s)", COULEURS["danger"] if nb_alertes > 0 else COULEURS["success"]),
         ]
 
         for i, (icone, val, label, coul) in enumerate(kpis_data):
@@ -252,10 +252,10 @@ class StockMixin:
         pid = int(iid)
 
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="📥 Entrée de stock rapide...", command=lambda: self._mouvement("entree", pid))
-        menu.add_command(label="📤 Sortie de stock...", command=lambda: self._mouvement("sortie", pid))
-        menu.add_command(label="🔄 Transfert dépôt...", command=lambda: self._mouvement("transfert", pid))
-        menu.add_command(label="🔧 Ajustement d'inventaire...", command=lambda: self._mouvement("correction", pid))
+        menu.add_command(label="Entrée de stock rapide...", command=lambda: self._mouvement("entree", pid))
+        menu.add_command(label="Sortie de stock...", command=lambda: self._mouvement("sortie", pid))
+        menu.add_command(label="Transfert dépôt...", command=lambda: self._mouvement("transfert", pid))
+        menu.add_command(label="Ajustement d'inventaire...", command=lambda: self._mouvement("correction", pid))
         menu.post(event.x_root, event.y_root)
 
     def generer_reappro(self):
@@ -284,7 +284,7 @@ class StockMixin:
                         p.get("stock", 0), p.get("stock_mini", 0), cump, p.get("prix_vente", 0),
                         p.get("stock", 0) * cump
                     ])
-            self.statut(f"✅ Export stock réussi : {fichier}", COULEURS["success"])
+            self.statut(f"Export stock réussi : {fichier}", COULEURS["success"])
             messagebox.showinfo("Export réussi", f"Le fichier d'état du stock a été créé :\n\n{fichier}", parent=self.root)
         except Exception as exc:
             messagebox.showerror("Erreur Export", f"Impossible d'exporter : {exc}", parent=self.root)
@@ -318,6 +318,6 @@ class StockMixin:
             messagebox.showinfo(
                 "PDF indisponible",
                 "Aucun navigateur trouvé pour générer le PDF.\n\n"
-                "Utilisez « Facture A4 » puis Ctrl+P → "
+                "Utilisez « Facture A4 » puis Ctrl+P →"
                 "« Enregistrer au format PDF ».", parent=self.root)
             return

@@ -18,13 +18,13 @@ class PrevisionsMixin:
     def afficher_previsions(self):
         if not self.peut("stock"):
             return self._refus()
-        self._nouvelle_page("📉 Prévisions de rupture", self._idx_menu("Prévisions"))
+        self._nouvelle_page("Prévisions de rupture", self._idx_menu("Prévisions"))
 
-        Bouton(self.zone_actions, "🛒 Créer la commande", "primary",
+        Bouton(self.zone_actions, "Créer la commande", "primary",
                self._commander_depuis_prevision, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "📤 Exporter", "info",
+        Bouton(self.zone_actions, "Exporter", "info",
                self._exporter_previsions, petit=True).pack(side=tk.LEFT, padx=3)
-        Bouton(self.zone_actions, "🔤 Recalculer ABC", "secondary",
+        Bouton(self.zone_actions, "Recalculer ABC", "secondary",
                self._recalculer_abc, petit=True).pack(side=tk.LEFT, padx=3)
 
         barre = tk.Frame(self.zone, bg=COULEURS["bg"])
@@ -35,7 +35,7 @@ class PrevisionsMixin:
         self.cb_horizon.current(2)
         self.cb_horizon.pack(side=tk.LEFT, padx=(4, 14))
         self.cb_horizon.bind("<<ComboboxSelected>>", lambda e: self._charger_previsions())
-        self.lbl_prev_resume = tk.Label(barre, text="", font=(POLICE, 9, "bold"),
+        self.lbl_prev_resume = tk.Label(barre, text="", font=(POLICE, 9),
                                         bg=COULEURS["bg"], fg=COULEURS["danger"])
         self.lbl_prev_resume.pack(side=tk.RIGHT, padx=8)
 
@@ -74,7 +74,7 @@ class PrevisionsMixin:
         horizon = int(parse_float(self.cb_horizon.get().split()[0], 30))
         prev = m3.prevision_rupture(horizon_jours=horizon)
         self._previsions_courantes = prev
-        icones = {"critique": "🔴 Critique", "haute": "🟠 Haute", "moyenne": "🟡 Moyenne"}
+        icones = {"critique": "🔴 Critique", "haute": "🟠 Haute", "moyenne": "Moyenne"}
         t = self.tab_previsions
         t.delete(*t.get_children())
         cout = 0.0
@@ -94,7 +94,7 @@ class PrevisionsMixin:
             text=f"{len(prev)} produit(s) · {critiques} critique(s) · "
                  f"budget {fmt_money(cout, self.devise)}")
         if not prev:
-            self.statut("Aucune rupture prévue sur cet horizon 👍", COULEURS["success"])
+            self.statut("Aucune rupture prévue sur cet horizon", COULEURS["success"])
 
     def _commander_depuis_prevision(self):
         prev = getattr(self, "_previsions_courantes", [])
