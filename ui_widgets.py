@@ -394,6 +394,7 @@ class TableauTriable(ttk.Treeview):
         self._largeurs_initiales = {}
         self._numeriques = set()
         self._sens = {}
+        self._ajustement_prevu = None
 
         # Détecter le format
         if colonnes and len(colonnes[0]) == 2:
@@ -435,30 +436,61 @@ class TableauTriable(ttk.Treeview):
             pass
 
     def ajuster_largeurs_auto(self, max_lignes: int = 100) -> None:
-        """Ajuste automatiquement la largeur des colonnes selon la longueur réelle du texte, sans rétrécir sous la largeur initiale."""
+        """Ajuste la largeur des colonnes au texte, sans passer sous la largeur initiale."""
         try:
             children = self.get_children("")
             if not children:
                 return
-            for c in self["columns"]:
-                if c in self._colonnes_manuelles:
-                    continue
-                titre = str(self.heading(c).get("text", "")).rstrip(" ▲▼")
-                max_len = len(titre)
-                for child in children[:max_lignes]:
-                    val = self.set(child, c)
-                    if val:
-                        max_len = max(max_len, len(str(val)))
-                
-                largeur_min = getattr(self, "_largeurs_initiales", {}).get(c, 70)
-                largeur_ideale = max(largeur_min, min(450, max_len * 9 + 32))
-                self.column(c, width=largeur_ideale)
-        except Exception:
+            colonnes = [c for c in self["columns"] if c not in self._colonnes_manuelles]
+            if not colonnes:
+                return
+
+            # Une seule lecture par ligne (`values`) plutôt qu'un aller-retour Tcl
+            # par cellule : sur 11 colonnes, ça divise les appels par onze.
+            maxi = {c: len(str(self.heading(c).get("text", "")).rstrip(" ▲▼"))
+                    for c in colonnes}
+            index_col = {c: list(self["columns"]).index(c) for c in colonnes}
+            for child in children[:max_lignes]:
+                valeurs = self.item(child, "values")
+                for c in colonnes:
+                    i = index_col[c]
+                    if i < len(valeurs) and valeurs[i]:
+                        longueur = len(str(valeurs[i]))
+                        if longueur > maxi[c]:
+                            maxi[c] = longueur
+
+            for c in colonnes:
+                largeur_min = self._largeurs_initiales.get(c, 70)
+                self.column(c, width=max(largeur_min, min(450, maxi[c] * 9 + 32)))
+        except tk.TclError:
+            pass
+
+    def _ajuster_bientot(self) -> None:
+        """Regroupe les ajustements en un seul, quand la boucle redevient inactive.
+
+        Chaque insert() relançait un balayage complet du tableau : remplir
+        1 900 lignes déclenchait 1 900 balayages, soit ~2 millions d'appels Tcl
+        et 14 secondes d'attente. L'ajustement ne dépend que du contenu final,
+        une seule passe suffit donc.
+        """
+        if self._ajustement_prevu is not None:
+            return
+        try:
+            self._ajustement_prevu = self.after_idle(self._ajuster_maintenant)
+        except tk.TclError:
+            self._ajustement_prevu = None
+
+    def _ajuster_maintenant(self) -> None:
+        self._ajustement_prevu = None
+        try:
+            if self.winfo_exists():
+                self.ajuster_largeurs_auto()
+        except tk.TclError:
             pass
 
     def insert(self, parent, index, iid=None, **kwargs):
         res = super().insert(parent, index, iid=iid, **kwargs)
-        self.ajuster_largeurs_auto()
+        self._ajuster_bientot()
         return res
 
     def trier(self, colonne: str) -> None:

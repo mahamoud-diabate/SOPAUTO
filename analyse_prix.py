@@ -65,7 +65,7 @@ def _qualifier(ecart_pct: float, seuil: float = SEUIL_TOLERANCE_PCT) -> str:
 #  A. PRIX PRATIQUÉS
 # ═══════════════════════════════════════════════════════
 
-def analyse_prix_pratiques(jours: int = 90, min_ventes: int = 1,
+def _calcul_prix_pratiques(jours: int = 90, min_ventes: int = 1,
                            categorie_id: int | None = None,
                            seuil_tolerance: float = SEUIL_TOLERANCE_PCT) -> list[dict]:
     """
@@ -215,6 +215,51 @@ def analyse_prix_pratiques(jours: int = 90, min_ventes: int = 1,
     # Le plus gros manque à gagner d'abord
     resultat.sort(key=lambda x: x["impact_total"])
     return resultat
+
+
+# ── Cache de l'analyse des prix ──────────────────────────────────────────────
+# L'ecran Analyse ouvre trois onglets qui exploitent tous le meme jeu : le
+# calcul tournait donc trois fois par affichage (~1,2 s sur 600 ventes).
+#
+# Invalidation : `total_changes` de la connexion SQLite compte les lignes
+# modifiees depuis son ouverture. Il bouge des qu'une vente est enregistree ou
+# qu'un prix change, et reste stable sur les lectures — un jeton de version
+# gratuit, sans requete supplementaire. Une entree calculee sous une version
+# anterieure n'est jamais servie.
+#
+# Limite assumee : le compteur est propre a CETTE connexion. Si un autre
+# processus ecrivait dans la meme base, le cache ne le verrait pas. L'appli
+# ouvre une connexion persistante unique, donc le cas ne se presente pas.
+_CACHE_PRIX: dict[tuple, list[dict]] = {}
+
+
+def _version_donnees() -> int:
+    try:
+        return get_connection().total_changes
+    except Exception:
+        return -1
+
+
+def vider_cache_prix() -> None:
+    """Purge manuelle du cache (tests, ou reprise de donnees externe)."""
+    _CACHE_PRIX.clear()
+
+
+def analyse_prix_pratiques(jours: int = 90, min_ventes: int = 1,
+                           categorie_id: int | None = None,
+                           seuil_tolerance: float = SEUIL_TOLERANCE_PCT) -> list[dict]:
+    """Analyse des prix pratiques, memoisee tant que les donnees n'ont pas bouge."""
+    cle = (jours, min_ventes, categorie_id, seuil_tolerance, _version_donnees())
+    resultat = _CACHE_PRIX.get(cle)
+    if resultat is None:
+        resultat = _calcul_prix_pratiques(jours, min_ventes, categorie_id,
+                                          seuil_tolerance)
+        # Une seule version vit a la fois : les cles obsoletes ne servent plus.
+        _CACHE_PRIX.clear()
+        _CACHE_PRIX[cle] = resultat
+    # Copie de la liste : un appelant qui trie ou filtre ne doit pas corrompre
+    # l'entree en cache pour les suivants.
+    return list(resultat)
 
 
 def synthese_prix_global(jours: int = 90,
