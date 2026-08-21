@@ -152,7 +152,14 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
         """Retrouve l'index du bouton de menu portant ce libellé."""
         for i, b in enumerate(getattr(self, "boutons_menu", [])):
             try:
-                if libelle in b.cget("text"):
+                # Une entrée de menu est une Frame (`row`) qui porte son libellé
+                # dans le Label `_texte` : elle n'a pas d'option `text`. Lire
+                # directement `b.cget("text")` levait donc TclError sur chaque
+                # entrée et la fonction renvoyait toujours -1 — aucun écran
+                # ouvert via _idx_menu() n'était surligné dans le menu.
+                etiquette = getattr(b, "_texte", None)
+                texte = etiquette.cget("text") if etiquette is not None else b.cget("text")
+                if libelle in texte:
                     return i
             except tk.TclError:
                 continue

@@ -96,6 +96,11 @@ PALETTES = {
         "graph_line": "#818cf8",
         "table_even": "#151c2c",
         "table_odd": "#1a2336",
+        # Ces deux cles manquaient au theme sombre : `.get()` retombait sur
+        # l'indigo clair du theme clair et les en-tetes de tableaux restaient
+        # clairs sur fond sombre.
+        "table_header_bg": "#252e4a",
+        "table_header_fg": "#a5b4fc",
     },
 }
 
@@ -139,8 +144,8 @@ def appliquer_theme(root, factor=1.0) -> ttk.Style | None:
                     relief="solid",
                     font=(POLICE, taille_base))
     style.configure("Treeview.Heading",
-                    background=COULEURS.get("table_header_bg", "#e0e7ff"),
-                    foreground=COULEURS.get("table_header_fg", "#3730a3"),
+                    background=COULEURS["table_header_bg"],
+                    foreground=COULEURS["table_header_fg"],
                     relief="solid",
                     borderwidth=1,
                     font=(POLICE, taille_titre, "bold"),

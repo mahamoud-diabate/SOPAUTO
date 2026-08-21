@@ -32,8 +32,11 @@ def lancer(fichier):
     sortie = (proc.stdout or "") + (proc.stderr or "")
     trouve = MOTIF.findall(sortie)
     if not trouve:
-        # Pas de ligne de résultat : le fichier a planté avant la fin.
-        return 0, 1, sortie
+        # Les suites d'interface n'impriment pas la ligne « N reussis, M echoues » :
+        # elles annoncent leur résultat par leur code de sortie. On s'y fie, sinon
+        # `--ui` signale quatre échecs alors que les quatre suites passent.
+        # Un vrai plantage garde un code de sortie non nul et reste compté en échec.
+        return (1, 0, sortie) if proc.returncode == 0 else (0, 1, sortie)
     reussis, echoues = trouve[-1]
     return int(reussis), int(echoues), sortie
 
