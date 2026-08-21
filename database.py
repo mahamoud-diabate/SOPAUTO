@@ -1,5 +1,5 @@
 """
-SODIPAC — Base de données (proxy vers db/_database.py)
+SOPAUTO — Base de données (proxy vers db/_database.py)
 
 `import database as db` continue de fonctionner. Les tests qui modifient
 `db.DB_PATH` sont redirigés vers le vrai module db._database.

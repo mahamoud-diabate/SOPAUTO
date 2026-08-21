@@ -1,4 +1,4 @@
-# SODIPAC — ERP & Gestion Commerciale Pièces Auto
+# SOPAUTO — ERP & Gestion Commerciale Pièces Auto
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
@@ -13,9 +13,9 @@
 
 ## 📌 Présentation
 
-**SODIPAC** est une suite logicielle complète de **gestion commerciale (ERP / POS)** spécialement conçue pour les distributeurs et magasins de pièces de rechange automobiles. 
+**SOPAUTO** est une suite logicielle complète de **gestion commerciale (ERP / POS)** spécialement conçue pour les distributeurs et magasins de pièces de rechange automobiles. 
 
-Développé pour un environnement de production réel avec des flux intensifs au comptoir, SODIPAC allie une interface soignée et réactive en mode sombre/clair et un moteur de données ultra-rapide (**SQLite WAL** avec transactions atomiques).
+Développé pour un environnement de production réel avec des flux intensifs au comptoir, SOPAUTO allie une interface soignée et réactive en mode sombre/clair et un moteur de données ultra-rapide (**SQLite WAL** avec transactions atomiques).
 
 Le système est validé par **319 tests automatisés** sans framework externe (0 échec).
 
@@ -68,7 +68,7 @@ Le système est validé par **319 tests automatisés** sans framework externe (0
 ## 🏗️ Architecture & Conception
 
 ```
-SODIPAC/
+SOPAUTO/
 ├── main.py                     # Point d'entrée principal de l'application
 ├── core.py                     # Noyau applicatif, navigation & cycle de vie
 ├── ui_widgets.py               # Design System, palettes (Dark / Light) & composants
@@ -131,8 +131,8 @@ python tests/run_all.py --ui
 
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/mahamoud-diabate/SODIPAC.git
-cd SODIPAC
+git clone https://github.com/mahamoud-diabate/SOPAUTO.git
+cd SOPAUTO
 
 # 2. Installer les dépendances
 pip install -r requirements.txt

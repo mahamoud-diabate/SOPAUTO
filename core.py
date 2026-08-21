@@ -1,5 +1,5 @@
 """
-SODIPAC - Gestion Pièce Auto - Noyau de l'application
+SOPAUTO - Gestion Pièce Auto - Noyau de l'application
 Menu, navigation, thème, permissions, structure.
 """
 import os
@@ -60,7 +60,7 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
                   CreancesMixin, AchatsMixin, InventaireMixin,
                   VehiculesMixin, DepotsMixin, RetoursMixin,
                   PrevisionsMixin):
-    """Application principale SODIPAC — caisse, stock, clients, rapports.
+    """Application principale SOPAUTO — caisse, stock, clients, rapports.
 
     Architecture : Application hérite de 18 mixins (1 par écran).
     Chaque mixin est dans son propre fichier page_*.py.
@@ -82,7 +82,7 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
         self.params = db.get_parametres()
         self.devise = self.params.get("devise", "F CFA")
 
-        root.title(f"{self.params.get('entreprise_nom', 'SODIPAC')} — Gestion Pièce Auto "
+        root.title(f"{self.params.get('entreprise_nom', 'SOPAUTO')} — Gestion Pièce Auto "
                    f"[{utilisateur['nom_utilisateur']} · {self.role}]")
         root.geometry("1400x820")
         root.minsize(1100, 680)
@@ -202,7 +202,7 @@ class Application(PageAnalyse, DashboardMixin, CaisseMixin,
                  bg="#6366f1", fg="white").place(relx=.5, rely=.5, anchor="center")
 
         tk.Label(logo_frame,
-                 text=self.params.get("entreprise_nom", "SODIPAC"),
+                 text=self.params.get("entreprise_nom", "SOPAUTO"),
                  font=(POLICE, 15, "bold"), bg=COULEURS["sidebar"],
                  fg="white").pack(pady=(8, 0))
         tk.Label(logo_frame, text="Gestion Pièce Auto", font=(POLICE, 8),

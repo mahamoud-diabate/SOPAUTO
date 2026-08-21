@@ -1,5 +1,5 @@
 """
-SODIPAC - Rapports
+SOPAUTO - Rapports
 """
 import tkinter as tk
 from tkinter import ttk, messagebox

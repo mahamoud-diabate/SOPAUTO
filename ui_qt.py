@@ -1,5 +1,5 @@
 """
-SODIPAC - Interface PyQt6 (Design System & Palette identique à Tkinter)
+SOPAUTO - Interface PyQt6 (Design System & Palette identique à Tkinter)
 """
 import sys
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
@@ -144,7 +144,7 @@ def get_qss(theme="clair"):
 
 
 class CarteQt(QFrame):
-    """Carte conteneur professionnelle identique au style Tkinter SODIPAC."""
+    """Carte conteneur professionnelle identique au style Tkinter SOPAUTO."""
 
     def __init__(self, titre="", parent=None):
         super().__init__(parent)
@@ -205,7 +205,7 @@ class TableauTriableQt(QTableWidget):
 
 
 class BoutonQt(QPushButton):
-    """Bouton stylisé identique au composant Bouton Tkinter SODIPAC."""
+    """Bouton stylisé identique au composant Bouton Tkinter SOPAUTO."""
 
     def __init__(self, texte, variante="primary", callback=None, parent=None):
         super().__init__(texte, parent)

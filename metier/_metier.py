@@ -1,5 +1,5 @@
 """
-SODIPAC - Couche métier v3
+SOPAUTO - Couche métier v3
 ==========================
 
 Fonctions métier des nouveautés v3. Importable depuis database.py ou main.py.

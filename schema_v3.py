@@ -1,5 +1,5 @@
 """
-SODIPAC - Migration de schéma v3
+SOPAUTO - Migration de schéma v3
 ================================
 
 Ajoute, de façon **additive et non destructive**, tout ce qui manquait au

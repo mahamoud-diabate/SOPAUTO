@@ -1,5 +1,5 @@
 """
-SODIPAC - Thème, helpers et widgets réutilisables
+SOPAUTO - Thème, helpers et widgets réutilisables
 """
 import tkinter as tk
 from tkinter import ttk

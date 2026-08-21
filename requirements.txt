@@ -1,4 +1,4 @@
-# SODIPAC — dépendances
+# SOPAUTO — dépendances
 #
 # SQLite est inclus dans la bibliothèque standard de Python 3.11+.
 # L'interface, elle, s'appuie sur deux paquets tiers :
@@ -11,4 +11,4 @@ PyQt6>=6.6              # interface alternative Qt (main_qt.py, *_qt.py)
 #
 # Pour construire l'exécutable Windows (optionnel) :
 #   pip install pyinstaller
-#   pyinstaller sodipac.spec
+#   pyinstaller sopauto.spec

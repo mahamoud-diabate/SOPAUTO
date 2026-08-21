@@ -1,6 +1,6 @@
 # DEVELOPER.md — Guide du développeur
 
-Documentation technique pour la maintenance et l'extension de SODIPAC.
+Documentation technique pour la maintenance et l'extension de SOPAUTO.
 Pour l'usage courant, voir [`README.md`](README.md).
 
 ---

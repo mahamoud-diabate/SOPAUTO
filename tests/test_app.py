@@ -4,7 +4,7 @@ import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)
 
 import os, sys, shutil, tempfile, traceback
 
-TMP = tempfile.mkdtemp(prefix="sodipac_test_")
+TMP = tempfile.mkdtemp(prefix="sopauto_test_")
 import database as db
 db.DB_PATH = os.path.join(TMP, "test.db")
 db.BACKUP_DIR = os.path.join(TMP, "sauvegardes")

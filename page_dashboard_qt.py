@@ -1,5 +1,5 @@
 """
-SODIPAC - Page Dashboard PyQt6
+SOPAUTO - Page Dashboard PyQt6
 """
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (

@@ -1,5 +1,5 @@
 """
-SODIPAC - Gestion des Créances Clients & Historique des Règlements (Version Améliorée)
+SOPAUTO - Gestion des Créances Clients & Historique des Règlements (Version Améliorée)
 
 Fonctionnalités :
 - Tableau de bord KPI synthétique (Total créances, Retards > 15j, Clients débiteurs, Règlements du mois).

@@ -1,5 +1,5 @@
 """
-SODIPAC - Point d'entrée principal PyQt6
+SOPAUTO - Point d'entrée principal PyQt6
 """
 import sys
 import os
@@ -20,7 +20,7 @@ def main():
     utilisateur = {
         "id": 1,
         "nom_utilisateur": "admin",
-        "nom_complet": "Administrateur SODIPAC",
+        "nom_complet": "Administrateur SOPAUTO",
         "role": "superviseur"
     }
 

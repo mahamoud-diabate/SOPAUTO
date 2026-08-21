@@ -1,5 +1,5 @@
 """
-SODIPAC - Page Produits PyQt6 (Avec création, modification, suppression, export)
+SOPAUTO - Page Produits PyQt6 (Avec création, modification, suppression, export)
 """
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (

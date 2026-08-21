@@ -1,5 +1,5 @@
 """
-SODIPAC - Test d'Stress Aggressif et Simulation Utilisateur Débutant / Non-Expert
+SOPAUTO - Test d'Stress Aggressif et Simulation Utilisateur Débutant / Non-Expert
 Simule des saisies chaotiques, erreurs de manipulation, doubles clics et cas limites.
 """
 

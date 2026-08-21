@@ -1,5 +1,5 @@
 """
-SODIPAC - Point de Vente / Caisse (Négociation de prix & UI modernisée)
+SOPAUTO - Point de Vente / Caisse (Négociation de prix & UI modernisée)
 
 Permet :
 - La sélection immédiate du client (avec solde des créances et historique d'achat).

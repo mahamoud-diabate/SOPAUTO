@@ -1,5 +1,5 @@
 """
-SODIPAC — Logique métier v3 (proxy vers metier/_metier.py)
+SOPAUTO — Logique métier v3 (proxy vers metier/_metier.py)
 
 `import metier_v3 as m3` continue de fonctionner.
 """

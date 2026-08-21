@@ -1,11 +1,11 @@
 @echo off
 chcp 65001 >nul
-title SODIPAC - Gestion Piece Auto (PyQt6 Engine)
+title SOPAUTO - Gestion Piece Auto (PyQt6 Engine)
 cd /d "%~dp0"
 
 echo.
 echo   ========================================
-echo      SODIPAC - Engine PyQt6 (C++ GPU)
+echo      SOPAUTO - Engine PyQt6 (C++ GPU)
 echo   ========================================
 echo.
 

@@ -1,5 +1,5 @@
 """
-SODIPAC — Écran « Analyse commerciale »
+SOPAUTO — Écran « Analyse commerciale »
 =======================================
 
 Mixin regroupant 4 onglets qui répondent aux questions que se pose un

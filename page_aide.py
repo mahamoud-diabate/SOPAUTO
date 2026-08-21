@@ -1,5 +1,5 @@
 """
-SODIPAC - Aide
+SOPAUTO - Aide
 """
 import tkinter as tk
 from tkinter import ttk

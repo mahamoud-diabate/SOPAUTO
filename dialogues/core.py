@@ -98,7 +98,7 @@ class DialogueConnexion:
     def __init__(self, root) -> None:
         self.utilisateur = None
         self.root = root
-        root.title("SODIPAC — Connexion au système")
+        root.title("SOPAUTO — Connexion au système")
         root.configure(bg="#0f172a")
         root.resizable(False, False)
         root.geometry("540x650")
@@ -114,7 +114,7 @@ class DialogueConnexion:
 
         tk.Label(f_badge, text="🚗", font=(POLICE, 32), bg="#1e293b", fg="#818cf8").pack()
 
-        nom_soc = db.get_parametres().get("entreprise_nom", "SODIPAC")
+        nom_soc = db.get_parametres().get("entreprise_nom", "SOPAUTO")
         tk.Label(cadre_principal, text=nom_soc, font=(POLICE, 22, "bold"),
                  bg="#0f172a", fg="white").pack()
         tk.Label(cadre_principal, text="Gestion & Distribution de Pièces Automobiles",

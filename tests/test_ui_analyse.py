@@ -1,5 +1,5 @@
 """
-SODIPAC — Test headless de l'écran « Analyse commerciale »
+SOPAUTO — Test headless de l'écran « Analyse commerciale »
 =========================================================
 
 Crée un scénario de négociation réaliste, ouvre l'écran d'analyse et

@@ -1,5 +1,5 @@
 """
-SODIPAC — Test headless des écrans v3
+SOPAUTO — Test headless des écrans v3
 ====================================
 
 Instancie l'application et ouvre CHAQUE page v3 sur une base jetable,

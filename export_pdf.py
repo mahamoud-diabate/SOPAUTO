@@ -1,5 +1,5 @@
 """
-SODIPAC — Export PDF
+SOPAUTO — Export PDF
 ====================
 
 Convertit les documents HTML déjà produits par factures.py en PDF **sans

@@ -1,5 +1,5 @@
 """
-SODIPAC - Génération de factures / reçus imprimables (HTML → navigateur → impression)
+SOPAUTO - Génération de factures / reçus imprimables (HTML → navigateur → impression)
 """
 
 import os
@@ -117,7 +117,7 @@ def generer_facture_html(vente_id: int, format_ticket: bool = False) -> tuple[st
 {filigrane}
 <div class="entete">
   <div>
-    <div class="logo">🚗 {_echapper(p.get('entreprise_nom', 'SODIPAC'))}</div>
+    <div class="logo">🚗 {_echapper(p.get('entreprise_nom', 'SOPAUTO'))}</div>
     <div class="soc">
       {_echapper(p.get('entreprise_activite', ''))}<br>
       {_echapper(p.get('entreprise_adresse', ''))}<br>
@@ -160,7 +160,7 @@ def generer_facture_html(vente_id: int, format_ticket: bool = False) -> tuple[st
 
 <div class="pied">
   {_echapper(p.get('pied_facture', 'Merci de votre confiance !'))}<br>
-  Document généré le {datetime.now():%d/%m/%Y à %H:%M} par {_echapper(p.get('entreprise_nom', 'SODIPAC'))}
+  Document généré le {datetime.now():%d/%m/%Y à %H:%M} par {_echapper(p.get('entreprise_nom', 'SOPAUTO'))}
 </div>
 </body></html>"""
     return html, None
@@ -248,7 +248,7 @@ def generer_rapport_html(titre: str, date_debut: str, date_fin: str, donnees: li
            border-top:1px dashed #d6dce5; padding-top:10px; }}
   @media print {{ .barre {{ display:none; }} }}
 </style></head><body>
-<h1>{_echapper(p.get('entreprise_nom', 'SODIPAC'))} — {_echapper(titre)}</h1>
+<h1>{_echapper(p.get('entreprise_nom', 'SOPAUTO'))} — {_echapper(titre)}</h1>
 <div class="sous">Période du {_echapper(date_debut)} au {_echapper(date_fin)}
   • édité le {datetime.now():%d/%m/%Y %H:%M}</div>
 
@@ -272,7 +272,7 @@ def generer_rapport_html(titre: str, date_debut: str, date_fin: str, donnees: li
           for d in donnees["par_produit"]], (2, 3, 4))}
 
 <div class="barre"><button onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button></div>
-<div class="pied">{_echapper(p.get('entreprise_nom', 'SODIPAC'))} — rapport généré automatiquement</div>
+<div class="pied">{_echapper(p.get('entreprise_nom', 'SOPAUTO'))} — rapport généré automatiquement</div>
 </body></html>"""
 
     dossier = os.path.join(db.BASE_DIR, "rapports")
@@ -348,7 +348,7 @@ def generer_liste_reappro(ouvrir: bool = True) -> str:
                    border-radius:5px;cursor:pointer;font-size:14px;font-family:inherit; }}
   @media print {{ .barre {{ display:none; }} }}
 </style></head><body>
-<h1>🚗 {_echapper(p.get('entreprise_nom', 'SODIPAC'))} — Bon de réapprovisionnement</h1>
+<h1>🚗 {_echapper(p.get('entreprise_nom', 'SOPAUTO'))} — Bon de réapprovisionnement</h1>
 <div class="sous">{len(produits)} produit(s) sous le seuil d'alerte
   • édité le {datetime.now():%d/%m/%Y %H:%M}</div>
 {''.join(sections)}

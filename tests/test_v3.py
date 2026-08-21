@@ -1,5 +1,5 @@
 """
-SODIPAC — Tests de la couche métier v3
+SOPAUTO — Tests de la couche métier v3
 ======================================
 
 Teste sur une base JETABLE (test_v3.db) :

@@ -1,5 +1,5 @@
 """
-SODIPAC - Réinitialisation à Neuf de la Base de Données (Production Clean Reset)
+SOPAUTO - Réinitialisation à Neuf de la Base de Données (Production Clean Reset)
 Supprime toutes les données de test (produits, ventes, clients, mouvements, créances, réappro)
 et réinitialise l'application avec la structure propre et le compte admin par défaut.
 """

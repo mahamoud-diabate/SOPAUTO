@@ -1,5 +1,5 @@
 """
-SODIPAC - Application Principale PyQt6 (QMainWindow, Sidebar, 18 Modules)
+SOPAUTO - Application Principale PyQt6 (QMainWindow, Sidebar, 18 Modules)
 """
 from datetime import datetime
 from PyQt6.QtCore import Qt, QTimer
@@ -65,7 +65,7 @@ class SidebarButtonQt(QFrame):
 
 
 class ApplicationQt(QMainWindow):
-    """Fenêtre principale SODIPAC PyQt6 avec 18 modules."""
+    """Fenêtre principale SOPAUTO PyQt6 avec 18 modules."""
 
     def __init__(self, utilisateur):
         super().__init__()
@@ -74,7 +74,7 @@ class ApplicationQt(QMainWindow):
         db.set_utilisateur_courant(utilisateur["nom_utilisateur"])
         self.params = db.get_parametres()
 
-        self.setWindowTitle(f"{self.params.get('entreprise_nom', 'SODIPAC')} — Gestion Pièce Auto [{utilisateur['nom_utilisateur']}]")
+        self.setWindowTitle(f"{self.params.get('entreprise_nom', 'SOPAUTO')} — Gestion Pièce Auto [{utilisateur['nom_utilisateur']}]")
         self.resize(1366, 768)
 
         self.w_central = QWidget()
@@ -120,7 +120,7 @@ class ApplicationQt(QMainWindow):
         l_side.setSpacing(8)
 
         # Logo Header
-        lbl_logo = QLabel("🚗 SODIPAC")
+        lbl_logo = QLabel("🚗 SOPAUTO")
         lbl_logo.setStyleSheet("font-size: 20px; font-weight: bold; color: #ffffff;")
         lbl_sub = QLabel("Gestion Pièce Auto")
         lbl_sub.setStyleSheet("font-size: 11px; color: #6366f1; font-weight: bold;")

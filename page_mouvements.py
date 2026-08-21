@@ -1,5 +1,5 @@
 """
-SODIPAC - Mouvements
+SOPAUTO - Mouvements
 """
 import tkinter as tk
 from tkinter import ttk

@@ -1,5 +1,5 @@
 """
-SODIPAC - Gestion des Stocks & Mouvements Multi-Dépôts (Version Améliorée)
+SOPAUTO - Gestion des Stocks & Mouvements Multi-Dépôts (Version Améliorée)
 
 Fonctionnalités :
 - Tableau de bord synthétique du stock (Valeur CUMP, Revente potentielle, Marge brute théorique, Nb d'alertes).

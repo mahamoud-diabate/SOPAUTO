@@ -1,5 +1,5 @@
 """
-SODIPAC - Dialogues Modaux Native PyQt6 (Produits, Clients, Paiements Caisse, Mouvements)
+SOPAUTO - Dialogues Modaux Native PyQt6 (Produits, Clients, Paiements Caisse, Mouvements)
 """
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (

@@ -1,5 +1,5 @@
 """
-SODIPAC - Page Caisse PyQt6 (Avec Dialogue Paiement & Monnaie)
+SOPAUTO - Page Caisse PyQt6 (Avec Dialogue Paiement & Monnaie)
 """
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (

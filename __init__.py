@@ -1,5 +1,5 @@
 """
-SODIPAC — Gestion Pièce Auto
+SOPAUTO — Gestion Pièce Auto
 =============================
 
 Logiciel de gestion de stock, caisse et pilotage commercial pour boutique

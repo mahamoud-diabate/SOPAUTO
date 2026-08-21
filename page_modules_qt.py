@@ -1,5 +1,5 @@
 """
-SODIPAC - Pages Stock, Clients, Créances, Rapports PyQt6 (Avec Dialogues)
+SOPAUTO - Pages Stock, Clients, Créances, Rapports PyQt6 (Avec Dialogues)
 """
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QMessageBox

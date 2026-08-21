@@ -1,5 +1,5 @@
 """
-SODIPAC — Helpers base de données partagés.
+SOPAUTO — Helpers base de données partagés.
 
 Fonctions utilisées à la fois par database.py et schema_v3.py
 sans créer d'import circulaire.

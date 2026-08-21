@@ -1,5 +1,5 @@
 """
-SODIPAC — Dialogues (20 classes en 5 sous-modules)
+SOPAUTO — Dialogues (20 classes en 5 sous-modules)
 
 Pour naviguer :  from dialogues.core import DialogueBase
                  from dialogues.v3 import DialogueCommande

@@ -1,4 +1,4 @@
-# SODIPAC — Rapport complet d'amélioration
+# SOPAUTO — Rapport complet d'amélioration
 
 > Logiciel de gestion de stock, caisse et pilotage commercial pour boutique de pièces automobiles.
 > **Python 3.11+ · Tkinter · SQLite — 319+ tests, 0 échec**
@@ -7,7 +7,7 @@
 |:---|---|
 | **Projet** | `C:\Users\diaba\GestionPieceAuto` |
 | **Stack** | Python 3.11 · Tkinter · SQLite (aucune dépendance externe) |
-| **Dépôt** | https://github.com/mahamoud-diabate/SODIPAC |
+| **Dépôt** | https://github.com/mahamoud-diabate/SOPAUTO |
 | **État** | Fonctionnel — standalone `.exe` (12 Mo) |
 
 ---
@@ -294,7 +294,7 @@ GestionPieceAuto/
 | `import shutil` inline dans `_sync_cloud()` | Déplacé en haut du fichier |
 | README obsolète (13 mixins, `pages_v3.py`) | Mis à jour (18 mixins, packages, nouvelle archi) |
 | Pas de `requirements.txt` ni `__init__.py` | Créés |
-| `sodipac.spec` avec `pages_v3` et `pathex=[]` | Corrigé : 48 imports, `pathex=['.']` |
+| `sopauto.spec` avec `pages_v3` et `pathex=[]` | Corrigé : 48 imports, `pathex=['.']` |
 
 ---
 
@@ -393,8 +393,8 @@ Abidjan (vendeur)              Cloud                 Canada (gérant)
 ─────────────────             ───────               ─────────────
 Vente → WAL flush →          OneDrive sync         OneDrive sync →
 copie .db dans               automatique           reçoit le .db
-OneDrive\SODIPAC\                                   ↓
-                                              Ouvre SODIPAC.exe
+OneDrive\SOPAUTO\                                   ↓
+                                              Ouvre SOPAUTO.exe
                                               → dashboard à jour
 ```
 
@@ -409,7 +409,7 @@ OneDrive\SODIPAC\                                   ↓
 
 ## 8. Packaging standalone (.exe)
 
-- **PyInstaller** : 1 fichier `SODIPAC.exe` (12 Mo) — Python inclus
+- **PyInstaller** : 1 fichier `SOPAUTO.exe` (12 Mo) — Python inclus
 - Compatible `sys.frozen` pour trouver la base à côté du .exe
 - Dossier `dist/` = l'application complète : copier-coller, pas d'installation
 
@@ -496,17 +496,17 @@ CA apres annulation: 36500.0              ← CA recalculé correctement
 
 ## 12. Projets associés
 
-### SODIPAC Web — migration vers le cloud (abandonné)
+### SOPAUTO Web — migration vers le cloud (abandonné)
 
 Projet de SPA HTML/JS hébergée sur Cloudflare Pages + Supabase (PostgreSQL + Realtime) :
 
-- `SodipacWeb/index.html` — shell SPA
-- `SodipacWeb/css/app.css` — thème responsive
-- `SodipacWeb/js/` — supabase-init, app, utils, auth
-- `SodipacWeb/js/views/` — dashboard, caisse, produits
-- `SodipacWeb/sql/schema.sql` — schéma PostgreSQL complet avec RLS
-- `SodipacWeb/PLAN.md` — plan de migration
-- `SodipacWeb/README.md` — instructions de déploiement
+- `SopautoWeb/index.html` — shell SPA
+- `SopautoWeb/css/app.css` — thème responsive
+- `SopautoWeb/js/` — supabase-init, app, utils, auth
+- `SopautoWeb/js/views/` — dashboard, caisse, produits
+- `SopautoWeb/sql/schema.sql` — schéma PostgreSQL complet avec RLS
+- `SopautoWeb/PLAN.md` — plan de migration
+- `SopautoWeb/README.md` — instructions de déploiement
 
 Non poursuivi : l'utilisateur préfère garder l'application Tkinter en local.
 
@@ -535,9 +535,9 @@ sauvegarde automatique Google Drive + script de lecture seule, mini serveur Flas
 
 | Élément | Détail |
 |---|---|
-| `dist/SODIPAC.exe` | 12 Mo — standalone, 0 dépendance, rebuild 25/07 |
+| `dist/SOPAUTO.exe` | 12 Mo — standalone, 0 dépendance, rebuild 25/07 |
 | Base vierge | admin/admin123, 5 produits démo, 10 catégories |
-| GitHub | https://github.com/mahamoud-diabate/SODIPAC |
+| GitHub | https://github.com/mahamoud-diabate/SOPAUTO |
 | Tests | 319 assertions, 0 échec (8 suites) |
 | Architecture | 18 mixins + 4 packages (db, metier, dialogues, racine) |
 | Qualité | 0 `except: pass` silencieux, 0 duplication, 0 import circulaire |

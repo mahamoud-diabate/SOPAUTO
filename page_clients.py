@@ -1,5 +1,5 @@
 """
-SODIPAC - Clients
+SOPAUTO - Clients
 """
 import tkinter as tk
 from tkinter import messagebox

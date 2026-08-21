@@ -1,5 +1,5 @@
 """
-SODIPAC - Tableau de bord
+SOPAUTO - Tableau de bord
 """
 import tkinter as tk
 from tkinter import ttk
@@ -41,7 +41,7 @@ class DashboardMixin:
 
     def _afficher_guide_demarrage(self):
         """Guide pas-a-pas affiche au premier lancement (0 vente, <=5 produits demo)."""
-        guide = Carte(self.zone, "🚀 Bienvenue sur SODIPAC — Guide de demarrage")
+        guide = Carte(self.zone, "🚀 Bienvenue sur SOPAUTO — Guide de demarrage")
         guide.pack(fill=tk.X, pady=(0, 12))
         c = guide.corps
         etapes = [

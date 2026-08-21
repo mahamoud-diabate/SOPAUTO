@@ -1,5 +1,5 @@
 """
-SODIPAC — Tests de l'analyse des prix et des tendances
+SOPAUTO — Tests de l'analyse des prix et des tendances
 ======================================================
 
 Base jetable, scénarios de négociation FABRIQUÉS pour vérifier que les

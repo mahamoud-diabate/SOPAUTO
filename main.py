@@ -1,5 +1,5 @@
 """
-SODIPAC — Gestion Pièce Auto
+SOPAUTO — Gestion Pièce Auto
 Point d'entrée de l'application.
 """
 import os
@@ -27,7 +27,7 @@ ctk.set_default_color_theme("blue")
 
 def lancer():
     """Connexion puis application."""
-    print("Demarrage de SODIPAC...")
+    print("Demarrage de SOPAUTO...")
     db.init_database()
     root = tk.Tk()
 

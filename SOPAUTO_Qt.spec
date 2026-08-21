@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='SODIPAC_Qt',
+    name='SOPAUTO_Qt',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

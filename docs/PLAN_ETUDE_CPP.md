@@ -1,4 +1,4 @@
-# Plan d'Étude et de Développement C++ — SODIPAC From Scratch
+# Plan d'Étude et de Développement C++ — SOPAUTO From Scratch
 
 Ce plan est conçu pour vous faire passer de zéro à la maîtrise du langage **C++ moderne (C++20)** et vous rendre **100% autonome sans assistance d'IA**.
 
@@ -12,7 +12,7 @@ PHASE 1 : Fondations (Syntaxe & Fonctions)
         └─► PHASE 3 : Orienté Objet & STL (vector, map)
               └─► PHASE 4 : SQLite C API (Database Engine)
                     └─► PHASE 5 : Win32 API (GUI Native)
-                          └─► PHASE 6 : Assemblage SODIPAC C++
+                          └─► PHASE 6 : Assemblage SOPAUTO C++
 ```
 
 ---
@@ -117,10 +117,10 @@ PHASE 1 : Fondations (Syntaxe & Fonctions)
 
 ---
 
-### Structure recommandée pour votre dossier C++ (`C:\Users\diaba\SODIPAC_CPP`) :
+### Structure recommandée pour votre dossier C++ (`C:\Users\diaba\SOPAUTO_CPP`) :
 
 ```
-SODIPAC_CPP/
+SOPAUTO_CPP/
 ├── include/           # Fichiers d'en-tête (.h / .hpp)
 │   ├── Database.hpp
 │   ├── Produit.hpp

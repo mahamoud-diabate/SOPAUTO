@@ -1,5 +1,5 @@
 """
-SODIPAC - Test de validation des 18 modules PyQt6
+SOPAUTO - Test de validation des 18 modules PyQt6
 """
 
 import _bootstrap  # noqa: F401  (chemin d'import + sortie UTF-8)

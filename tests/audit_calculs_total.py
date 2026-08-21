@@ -1,5 +1,5 @@
 """
-SODIPAC - Audit Mathématique & Vérification d'Exactitude des Calculs
+SOPAUTO - Audit Mathématique & Vérification d'Exactitude des Calculs
 Vérifie 100% des formules mathématiques, marges, CUMP, taxes, remises et agrégations.
 """
 

@@ -1,5 +1,5 @@
 """
-SODIPAC - Modules Complémentaires PyQt6 (Achats, Inventaire, Retours, Prévisions, Dépôts, Catégories, Fournisseurs, Véhicules, Mouvements, Paramètres, Aide)
+SOPAUTO - Modules Complémentaires PyQt6 (Achats, Inventaire, Retours, Prévisions, Dépôts, Catégories, Fournisseurs, Véhicules, Mouvements, Paramètres, Aide)
 """
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -287,7 +287,7 @@ class PageParametresQt(QWidget):
         lyt = QVBoxLayout(self)
         lyt.setContentsMargins(16, 16, 16, 16)
         c = CarteQt("⚙️ Paramètres & Configuration Système")
-        lbl = QLabel("Configuration générale de SODIPAC (Entreprise, Devise, Sauvegardes).")
+        lbl = QLabel("Configuration générale de SOPAUTO (Entreprise, Devise, Sauvegardes).")
         lbl.setStyleSheet("font-size: 13px; color: #64748b;")
         c.layout_corps.addWidget(lbl)
         lyt.addWidget(c)

@@ -1,5 +1,5 @@
 """
-SODIPAC — Analyse des prix pratiqués et des tendances de vente
+SOPAUTO — Analyse des prix pratiqués et des tendances de vente
 ==============================================================
 
 Dans une boutique de pièces auto, le prix affiché n'est qu'un point de

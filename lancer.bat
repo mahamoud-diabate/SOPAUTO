@@ -1,11 +1,11 @@
 @echo off
 chcp 65001 >nul
-title SODIPAC - Gestion Piece Auto
+title SOPAUTO - Gestion Piece Auto
 cd /d "%~dp0"
 
 echo.
 echo   ========================================
-echo      SODIPAC - Gestion Piece Auto
+echo      SOPAUTO - Gestion Piece Auto
 echo   ========================================
 echo.
 

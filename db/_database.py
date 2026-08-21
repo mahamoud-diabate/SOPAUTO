@@ -1,5 +1,5 @@
 """
-SODIPAC - Gestion Pièce Auto
+SOPAUTO - Gestion Pièce Auto
 Module Base de Données (SQLite)
 
 Améliorations v2 :
@@ -359,7 +359,7 @@ def init_database() -> None:
 
     # Paramètres par défaut
     defauts = {
-        "entreprise_nom": "SODIPAC",
+        "entreprise_nom": "SOPAUTO",
         "entreprise_activite": "Vente de pièces automobiles",
         "entreprise_adresse": "Abidjan, Côte d'Ivoire",
         "entreprise_telephone": "",

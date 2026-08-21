@@ -1,5 +1,5 @@
 """
-SODIPAC — Tests critiques (_sync_cloud, _tracer_prix, _maj_cump)
+SOPAUTO — Tests critiques (_sync_cloud, _tracer_prix, _maj_cump)
 ================================================================
 
 Fonctions critiques sans test unitaire auparavant.
@@ -56,7 +56,7 @@ def test_sync_cloud_dossier_valide():
     db = _init()
     
     # Créer un dossier temporaire pour simuler OneDrive
-    dossier_temp = tempfile.mkdtemp(prefix="sodipac_sync_test_")
+    dossier_temp = tempfile.mkdtemp(prefix="sopauto_sync_test_")
     
     try:
         # Simuler les params avec dossier_synchro

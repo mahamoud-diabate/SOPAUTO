@@ -1,5 +1,5 @@
 """
-SODIPAC - Catalogue Produits (Version Modernisée)
+SOPAUTO - Catalogue Produits (Version Modernisée)
 
 Fonctionnalités :
 - Synthèse KPI du catalogue (Total fiches, Marques référencées, Fiches à compléter, Marge catalogue moyenne).

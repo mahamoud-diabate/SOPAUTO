@@ -1,5 +1,5 @@
 """
-SODIPAC — Dialogues (pont vers le package dialogues/)
+SOPAUTO — Dialogues (pont vers le package dialogues/)
 
 Ce fichier existe pour rétrocompatibilité. Tout le code est dans dialogues/.
 """
