@@ -1,8 +1,10 @@
 import sys
 import os
+import random
 import time
 import tkinter as tk
 import ctypes
+from datetime import datetime, timedelta
 from ctypes import windll, byref, sizeof, Structure, c_int
 from PIL import Image
 
@@ -65,37 +67,79 @@ produits_data = [
 
 for p in produits_data:
     cid = cat_ids.get(p[1], 1)
+    # Rayon multiplie pour encaisser 10 jours de ventes de demonstration.
+    # Les references deja sous leur seuil restent intactes : ce sont elles qui
+    # alimentent les alertes de stock du tableau de bord.
+    stock_vente = p[6] * 5 if p[6] > 5 else p[6]
     db.add_produit(
         reference=p[2], nom=p[0], description=p[9],
         categorie_id=cid, fournisseur_id=fourn_ids[0], marque=p[8],
         prix_achat=p[4], prix_vente=p[5],
-        stock_reserve=0, stock_vente=p[6], stock_mini=p[7],
+        stock_reserve=stock_vente * 2, stock_vente=stock_vente, stock_mini=p[7],
         code_barres=p[3]
     )
 
 prods = db.get_produits()
 p_map = {p["reference"]: p for p in prods}
 
-db.create_vente(
-    "Garage Moderne & Fils",
-    [(p_map["SUZ-FRN-001"]["id"], 2, 15000),
-     (p_map["SUZ-FLT-001"]["id"], 3, 4500)],
-    remise=2500, mode_paiement="Espèces", client_id=client_ids[0]
-)
+# ── Historique de ventes sur 10 jours ──────────────────────────────────────
+# Toutes les ventes datees du meme jour donnaient un histogramme a une seule
+# barre et « pas de comparaison » sur chaque indicateur. On etale l'historique
+# et on fait varier les prix : sans dispersion, l'ecran d'analyse des prix
+# affiche +0.0 % sur chaque ligne et ne montre rien de ce qu'il sait faire.
+random.seed(11)
+MODES = ["Espèces", "Espèces", "Espèces", "Mobile Money", "Virement"]
+refs = list(p_map)
 
-db.create_vente(
-    "Auto Service Express",
-    [(p_map["TOY-FRN-010"]["id"], 2, 38000),
-     (p_map["SUZ-TRM-001"]["id"], 1, 75000)],
-    remise=5000, mode_paiement="Virement", client_id=client_ids[1]
-)
 
-db.create_vente(
-    "Transport & Logistique Diop",
-    [(p_map["TOY-DIS-002"]["id"], 1, 68000),
-     (p_map["ELC-BOU-001"]["id"], 6, 7000)],
-    remise=0, mode_paiement="Crédit", montant_paye=0, client_id=client_ids[2]
-)
+def prix_pratique(catalogue):
+    """Prix reellement facture : le magasin negocie ligne par ligne."""
+    tirage = random.random()
+    if tirage < 0.04:
+        facteur = random.choice([0.68, 0.72])                   # vente a perte
+    elif tirage < 0.34:
+        facteur = random.choice([0.88, 0.90, 0.93, 0.96])       # remise
+    elif tirage < 0.46:
+        facteur = random.choice([1.03, 1.05, 1.08])             # majoration
+    else:
+        return catalogue                                        # prix affiche
+    return max(50, round(catalogue * facteur / 50) * 50)
+
+
+conn_seed = db.get_connection()
+for recul in range(9, -1, -1):
+    jour = datetime.now() - timedelta(days=recul)
+    for _ in range(random.randint(2, 5)):
+        panier = random.sample(refs, random.randint(1, 3))
+        items = [(p_map[r]["id"], random.randint(1, 3),
+                  prix_pratique(p_map[r]["prix_vente"])) for r in panier]
+        total = sum(q * pu for _, q, pu in items)
+
+        a_credit = random.random() < 0.25
+        idx = random.randrange(len(client_ids))
+        # "Crédit" porte un accent dans create_vente() : sans lui la vente est
+        # enregistree comme soldee et aucune creance n'est ouverte.
+        acompte = round(total * random.choice([0, 0, 0.3, 0.5]) / 100) * 100
+
+        ok, msg, vente_id = db.create_vente(
+            cl_list[idx]["nom"] if a_credit or random.random() < 0.5 else "Client comptant",
+            items,
+            remise=random.choice([0, 0, 0, 2500, 5000]),
+            mode_paiement=db.MODE_CREDIT if a_credit else random.choice(MODES),
+            montant_paye=acompte if a_credit else total,
+            client_id=client_ids[idx] if a_credit else None,
+            # Echeance calee sur la date de vente et non sur aujourd'hui,
+            # sinon aucune creance n'apparait jamais en retard.
+            date_echeance=((jour + timedelta(days=random.choice([7, 15, 30])))
+                           .strftime("%Y-%m-%d") if a_credit else None),
+            controler_credit=False,
+        )
+        if ok and vente_id:
+            horodatage = jour.replace(hour=random.randint(8, 18),
+                                      minute=random.randint(0, 59))
+            with conn_seed:
+                conn_seed.execute("UPDATE ventes SET date_vente=? WHERE id=?",
+                                  (horodatage.strftime("%Y-%m-%d %H:%M:%S"), vente_id))
 
 # ── Fonctions de capture Win32 ctypes ──
 class BITMAPINFOHEADER(Structure):
@@ -120,6 +164,14 @@ class BITMAPINFO(Structure):
     ]
 
 def capture_fenetre(root_widget, out_path):
+    # Certains ecrans remaximisent la fenetre : on la ramene a la taille de
+    # capture avant chaque prise pour garder un jeu d'images homogene.
+    if root_widget.state() != "normal" or root_widget.winfo_width() != 2300:
+        root_widget.state("normal")
+        root_widget.geometry("2300x1120+30+30")
+        root_widget.update()
+        time.sleep(0.4)
+
     root_widget.update()
     time.sleep(0.2)
     hwnd = windll.user32.GetParent(root_widget.winfo_id()) or root_widget.winfo_id()
@@ -163,34 +215,46 @@ from core import Application
 from ui_widgets import appliquer_palette, appliquer_theme, THEME_ACTUEL
 
 root = tk.Tk()
+# Les largeurs de l'interface sont en pixels fixes (menu lateral = 248 px) alors
+# que Tk agrandit les polices selon le DPI : sur un ecran 4K le libelle deborde
+# de la barre et se retrouve coupe (« Tableau de bo »). On force les metriques
+# de police en 96 dpi pour retrouver les proportions prevues par le design.
+root.tk.call("tk", "scaling", 1.0)
 user = {"id": 1, "nom_utilisateur": "admin", "nom_complet": "Mahamoud Diabate", "role": "superviseur"}
 app = Application(root, user)
-root.geometry("1400x820+40+40")
+# Application() maximise la fenetre : en 4K le contenu prevu pour ~1400 px se
+# retrouve noye dans le vide. On revient a une taille de capture homogene.
+root.state("normal")
+root.geometry("2300x1120+30+30")
 root.update()
 
+# On passe par la bascule reelle de l'application. L'ancienne version changeait
+# la palette a la main puis redessinait seulement la page : l'en-tete, construit
+# avec la palette claire au demarrage, n'etait jamais reconstruit et restait
+# blanc sur toutes les captures « sombres ». basculer_theme() reconstruit toute
+# l'interface, donc la capture montre ce que l'utilisateur voit vraiment.
+def _basculer_vers(cible):
+    if THEME_ACTUEL[0] != cible:
+        app.basculer_theme()
+        root.update()
+        time.sleep(0.3)
+    assert THEME_ACTUEL[0] == cible, f"theme attendu {cible}, obtenu {THEME_ACTUEL[0]}"
+
 def appliquer_theme_sombre():
-    THEME_ACTUEL[0] = "sombre"
-    db.set_parametre("theme", "sombre")
-    appliquer_palette("sombre")
-    appliquer_theme(root)
+    _basculer_vers("sombre")
 
 def appliquer_theme_clair():
-    THEME_ACTUEL[0] = "clair"
-    db.set_parametre("theme", "clair")
-    appliquer_palette("clair")
-    appliquer_theme(root)
+    _basculer_vers("clair")
 
 # 1. Dashboard Sombre
 appliquer_theme_sombre()
 app.afficher_dashboard()
 capture_fenetre(root, "docs/dashboard_sombre.png")
-capture_fenetre(root, "docs/capture_sombre.png")
 
 # 2. Dashboard Clair
 appliquer_theme_clair()
 app.afficher_dashboard()
 capture_fenetre(root, "docs/dashboard_clair.png")
-capture_fenetre(root, "docs/capture_clair.png")
 
 # 3. Caisse Sombre
 appliquer_theme_sombre()
@@ -202,7 +266,6 @@ app.enregistrement = [
 ]
 app._rafraichir_enregistrement()
 capture_fenetre(root, "docs/caisse_sombre.png")
-capture_fenetre(root, "docs/caisse_screenshot.png")
 
 # 4. Caisse Clair
 appliquer_theme_clair()
