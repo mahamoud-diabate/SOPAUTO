@@ -914,13 +914,13 @@ class CaisseMixin:
         mode_paiement = self.cb_mode_caisse.get() if hasattr(self, 'cb_mode_caisse') else "Espèces"
         client = self.client_selectionne
 
-        if mode_paiement == "Crédit" and not client:
+        if mode_paiement == db.MODE_CREDIT and not client:
             messagebox.showwarning("Client requis", "Veuillez sélectionner un client pour une vente à crédit.", parent=self.root)
             return
 
         if client:
             solde = float(client.get("solde_creances", 0) or client.get("dette", 0) or 0)
-            if solde > 0 and mode_paiement == "Crédit":
+            if solde > 0 and mode_paiement == db.MODE_CREDIT:
                 if not messagebox.askyesno(
                         "⚠️ Créance existante",
                         f"Le client « {client['nom']} » a déjà un immatriculé de créances impayées de {fmt_money(solde, self.devise)}.\n\n"

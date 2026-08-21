@@ -33,6 +33,18 @@ DB_PATH = os.path.join(BASE_DIR, "gestion_piece_auto.db")
 BACKUP_DIR = os.path.join(BASE_DIR, "sauvegardes")
 EXPORT_DIR = os.path.join(BASE_DIR, "exports")
 
+# ── Valeurs persistées en base ───────────────────────────────────────────────
+# Ces chaînes sont écrites telles quelles dans SQLite ET comparées dans le code.
+# Elles étaient jusqu'ici recopiées à la main sur chaque site : un « Credit »
+# sans accent passait la comparaison de create_vente() sans erreur et
+# enregistrait la vente comme soldée — aucune créance n'était ouverte.
+# Les nommer transforme une faute de frappe en NameError immédiate.
+MODE_CREDIT = "Crédit"
+MODE_ESPECES = "Espèces"
+
+VENTE_VALIDEE = "validee"
+VENTE_ANNULEE = "annulee"
+
 # Utilisateur courant (renseigné par l'interface après connexion)
 UTILISATEUR_COURANT = "système"
 
@@ -1310,8 +1322,8 @@ def _controler_credit(conn, client_id, montant) -> tuple[bool, str]:
             WHERE r.vente_id = v.id AND r.sens = 'encaissement'
         ), 0))), 0) AS encours
         FROM ventes v
-        WHERE v.client_id=? AND v.mode_paiement='Crédit' AND v.statut='validee'
-    """, (client_id,)).fetchone()
+        WHERE v.client_id=? AND v.mode_paiement=? AND v.statut=?
+    """, (client_id, MODE_CREDIT, VENTE_VALIDEE)).fetchone()
     encours = _num_safe(row_enc["encours"]) if row_enc else 0.0
 
     if encours + _num_safe(montant) > plafond + 0.01:
@@ -1381,7 +1393,7 @@ def create_vente(client_nom, items, remise=0, mode_paiement="Espèces",
 
             # v3 : contrôle du plafond de crédit
             echeance = date_echeance
-            if mode_paiement == "Crédit":
+            if mode_paiement == MODE_CREDIT:
                 du = total - _num_safe(montant_paye)
                 if du > 0.01 and controler_credit:
                     ok_credit, msg_credit = _controler_credit(conn, client_id, du)
@@ -1392,7 +1404,7 @@ def create_vente(client_nom, items, remise=0, mode_paiement="Espèces",
                     echeance = (datetime.now() + timedelta(days=delai)).strftime("%Y-%m-%d")
 
             # Crédit : montant_paye reste tel quel (0 = dette), sinon défaut = total
-            paye = montant_paye if mode_paiement == "Crédit" else (montant_paye or total)
+            paye = montant_paye if mode_paiement == MODE_CREDIT else (montant_paye or total)
             cur = conn.execute(
                 """INSERT INTO ventes (client_nom, client_id, sous_total, remise, total,
                    mode_paiement, montant_paye, utilisateur, statut, date_vente,
