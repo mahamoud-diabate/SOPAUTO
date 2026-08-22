@@ -7,7 +7,7 @@ Projet personnel, modélisé sur les processus réels d'un comptoir de pièces
 automobiles. Python 3.11+ · Tkinter · SQLite. Aucun serveur, aucune
 connexion réseau requise : l'exécutable distribué est autonome.
 
-![Tableau de bord](docs/dashboard_clair.png)
+![Démonstration interactive de SOPAUTO](docs/demo-dashboard.gif)
 
 ---
 
