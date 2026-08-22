@@ -121,7 +121,7 @@ root.tk.call("tk", "scaling", 1.0)
 user = {"id": 1, "nom_utilisateur": "admin", "nom_complet": "Mahamoud Diabate", "role": "superviseur"}
 app = Application(root, user)
 root.state("normal")
-root.geometry("2300x1120+30+30")
+root.geometry("1920x1080+0+0")  # 16:9 — évite la distorsion à l'encodage
 root.update()
 time.sleep(0.5)
 
@@ -198,7 +198,7 @@ with open(manifest, "w", encoding="utf-8") as fh:
         fh.write(f"duration {max(0.04, d):.3f}\n")
     fh.write(f"file 'f{len(seq)-1:05d}.jpg'\n")
 
-base_filter = "fps=30,scale=1920:1080:flags=lanczos"
+base_filter = "fps=30,scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080"
 for ext, vcodec, extra in [
     ("mp4", "libx264", ["-pix_fmt", "yuv420p", "-crf", "20", "-preset", "medium"]),
     ("webm", "libvpx-vp9", ["-pix_fmt", "yuv420p", "-crf", "34", "-b:v", "0"]),
