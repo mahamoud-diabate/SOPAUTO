@@ -121,7 +121,7 @@ root.tk.call("tk", "scaling", 1.0)
 user = {"id": 1, "nom_utilisateur": "admin", "nom_complet": "Mahamoud Diabate", "role": "superviseur"}
 app = Application(root, user)
 root.state("normal")
-root.geometry("1920x1080+0+0")  # 16:9 — évite la distorsion à l'encodage
+root.geometry("1920x1080+0+0")  # largeur fixe de l'app Tkinter : zoomer = troncature
 root.update()
 time.sleep(0.5)
 
